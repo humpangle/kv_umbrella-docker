@@ -23,4 +23,3 @@
 **/elixir_buildpack.config
 **/.dockerignore
 **/tmp/
-run.sh

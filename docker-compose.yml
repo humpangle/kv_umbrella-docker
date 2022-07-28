@@ -1,0 +1,30 @@
+services:
+  ex:
+    build:
+      context: "."
+      target: "${MIX_ENV:-dev}"
+      args:
+        RELEASE_NAME: "${RELEASE_NAME:-storage}"
+    image: "${DOCKER_IMAGE_NAME:-kv-dev}"
+    stdin_open: true
+    entrypoint: ["/usr/local/bin/run", "dev"]
+    user: "kv"
+    env_file: "${DOCKER_ENV_FILE:-.env}"
+    ports:
+      - "${DOCKER_HOST_PORT}:4000"
+    volumes:
+      - ".:/app"
+      - "elixir_not_used__build:/app/_build/"
+      - "elixir_not_used_deps:/app/deps/"
+      - "elixir_not_used_.elixir_ls:/app/.elixir_ls/"
+    networks:
+      kv:
+
+volumes:
+  elixir_not_used__build:
+  elixir_not_used_deps:
+  elixir_not_used_.elixir_ls:
+
+networks:
+  kv:
+    driver: bridge

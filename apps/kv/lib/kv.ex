@@ -195,7 +195,8 @@ defmodule Kv.Cmd do
 
     {_, selected_node} =
       Enum.find(table, fn {list, _} -> first in list end) ||
-        raise "no #{inspect(n)}"
+        raise "No server is available to serve bucket named: #{inspect(n)}.
+                 Available servers: #{inspect(table)}\n\n"
 
     if selected_node == node() do
       apply(mod, fun, args)

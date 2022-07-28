@@ -3,6 +3,9 @@
 #=============================================================================
 FROM hexpm/elixir:1.13.4-erlang-25.0.2-alpine-3.16.0 AS dev
 
+ENV \
+  PORT=4000
+
 RUN \
   addgroup -S kv \
   && adduser -S kv -G kv \
@@ -14,10 +17,10 @@ RUN \
   openssl \
   git \
   ca-certificates \
-  curl
-# iputils-ping \
-# dnsutils
-# bash
+  curl \
+  bash \
+  inotify-tools \
+  iputils
 
 USER kv
 
@@ -41,12 +44,20 @@ COPY \
 
 COPY \
   --chown=kv:kv \
+  --chmod=755 \
+  ./run.sh \
+  /usr/local/bin/run
+
+COPY \
+  --chown=kv:kv \
   . .
 
 RUN \
   mix local.hex --force \
   && mix local.rebar --force \
   && mix deps.get
+
+EXPOSE 4000 4001 4002 4003
 
 CMD ["/bin/sh"]
 

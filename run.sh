@@ -1,6 +1,11 @@
 #!/bin/bash
 # shellcheck disable=1090
 
+function _printf {
+
+  printf "\n%s\n\n" "$1"
+}
+
 function _timestamp {
   date +'%s'
 }
@@ -14,89 +19,57 @@ function _raise_on_no_env_file {
 
 function _env {
   local env
+  local splitted_envs=""
 
   if [[ -n "$1" ]]; then
     env="$1"
-  else
+  elif [[ -e .env ]]; then
     env=".env"
   fi
 
-  set -a
-  . $env
-  set +a
+  if [[ -n "$env" ]]; then
+    set -a
+    . $env
+    set +a
 
-  splitenvs "$env" --lines
-}
-
-function build {
-  : "Build docker image. Usage:"
-  : "    run build .env.file"
-
-  _raise_on_no_env_file "$1"
-
-  _env "$1"
-  clear
-
-  local build_arg_release
-  build_arg_release=""
-
-  if [[ -n "$RELEASE_NAME" ]]; then
-    build_arg_release="--build-arg RELEASE_NAME=${RELEASE_NAME}"
+    splitted_envs=$(splitenvs "$env" --lines)
   fi
 
-  local cmd
-
-  cmd="docker build \
-    -t $DOCKER_IMAGE_NAME \
-    $build_arg_release \
-    --target ${MIX_ENV:-dev} \
-    ."
-
-  printf "%s\n\n" "$cmd"
-  eval "$cmd"
+  "$splitted_envs"
 }
 
-function docker.run {
-  : "Run docker image"
-  : "    docker.run .env.file"
-
-  _raise_on_no_env_file "$1"
+function telnet.r {
+  : "Run telnet. Example:"
+  : "    run telnet.r [.env.file]"
 
   _env "$1"
   clear
 
   local cmd
+  cmd="telnet 127.0.0.1 $DOCKER_HOST_PORT"
 
-  cmd="docker run \
-    --name kv-$(_timestamp) \
-    -p 4000:4000 \
-    $DOCKER_IMAGE_NAME"
+  _printf "$cmd"
 
-  printf "%s\n\n" "$cmd"
   eval "$cmd"
 }
 
 function shell {
   : "Run iex shell. Example:"
-  : "    run shell .env.dev."
-  _env "$1"
+  : "    run shell"
   clear
-  eval "$(_env "$1") iex -S mix"
+  PORT=4001 iex -S mix
 }
 
 function test {
   : "test watch. Example:"
   : "    run test .env.test"
   clear
-  eval "$(_env "$1") mix test.interactive"
+  PORT=4002 mix test.interactive
 }
 
 function test.a {
   : "test all. Example:"
   : "    run test.a .env.test"
-
-  _raise_on_no_env_file "$1"
-  _env "$1"
   clear
 
   local node_a
@@ -107,18 +80,27 @@ function test.a {
   node_a="a$now@127.0.0.1"
   node_b="b$now@127.0.0.1"
 
-  eval "$(_env "$1") \
-      NO_START_SERVER=1 \
-    elixir --name $node_a --no-halt -S \
-      mix &"
+  NO_START_SERVER=1 \
+    elixir --name "$node_a" --no-halt -S \
+    mix &
 
-  eval "$(_env "$1") \
-      NODE1=$node_a \
-      NODE2=$node_b \
-    elixir --name $node_b -S \
-      mix test --include distributed"
+  PORT=4003 \
+    NODE1=$node_a \
+    NODE2=$node_b \
+    elixir --name "$node_b" -S \
+    mix test --include distributed
 
   wait
+}
+
+function dev {
+  : "Run development commands."
+  if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
+    mix deps.get
+    mix compile
+  fi
+
+  elixir --no-halt -S mix
 }
 
 function help {
