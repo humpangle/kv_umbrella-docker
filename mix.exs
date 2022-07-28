@@ -6,7 +6,24 @@ defmodule KvUmbrella.MixProject do
       apps_path: "apps",
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      releases: [
+        storage_only: [
+          version: "0.0.0",
+          include_executables_for: [:unix],
+          applications: [
+            kv: :permanent
+          ]
+        ],
+        storage_and_server: [
+          version: "0.0.0",
+          include_executables_for: [:unix],
+          applications: [
+            kv: :permanent,
+            kv_s: :permanent
+          ]
+        ]
+      ]
     ]
   end
 
