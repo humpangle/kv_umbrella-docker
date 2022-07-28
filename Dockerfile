@@ -57,7 +57,7 @@ RUN \
   && mix local.rebar --force \
   && mix deps.get
 
-EXPOSE 4000 4001 4002 4003
+EXPOSE 4000
 
 CMD ["/bin/sh"]
 
@@ -75,8 +75,7 @@ ENV \
 
 RUN \
   mix do deps.get --only prod, compile \
-  && mix release ${RELEASE_NAME} \
-  && rm -rf deps
+  && mix release ${RELEASE_NAME}
 
 #=============================================================================
 # PRODUCTION IMAGE
@@ -107,11 +106,15 @@ COPY \
   /app/_build/prod/rel/${RELEASE_NAME} \
   ./
 
+COPY \
+  --from=build \
+  --chown=kv:kv \
+  --chmod=755 \
+  /usr/local/bin/run \
+  /usr/local/bin/run
+
 RUN mv bin/${RELEASE_NAME} bin/run
 
 EXPOSE 4000
 
-ENTRYPOINT ["bin/run"]
-
-CMD ["start"]
-# CMD ["/bin/sh"]
+CMD ["/app/bin/run", "start"]

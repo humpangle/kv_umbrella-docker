@@ -2,7 +2,6 @@
 # shellcheck disable=1090
 
 function _printf {
-
   printf "\n%s\n\n" "$1"
 }
 
@@ -91,6 +90,26 @@ function test.a {
     mix test --include distributed
 
   wait
+}
+
+function docker.r {
+  : "Run production docker image."
+
+  _env "$1"
+  clear
+
+  local cmd
+  local container_name
+
+  container_name="kv-$(_timestamp)"
+
+  cmd="docker run -d --name $container_name $DOCKER_IMAGE_NAME"
+
+  _printf "$cmd"
+
+  echo "$@"
+
+  eval "$cmd"
 }
 
 function dev {

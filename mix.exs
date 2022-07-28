@@ -15,7 +15,7 @@ defmodule KvUmbrella.MixProject do
             kv: :permanent
           ]
         ],
-        storage_and_server: [
+        server_storage: [
           version: "0.0.0",
           include_executables_for: [:unix],
           applications: [
