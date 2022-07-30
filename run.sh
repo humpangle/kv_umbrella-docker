@@ -39,7 +39,7 @@ function _env {
 
 function telnet.r {
   : "Run telnet. Example:"
-  : "    run telnet.r [.env.file]"
+  : "                  bash run telnet.r [.env.file]"
 
   _env "$1"
   clear
@@ -53,22 +53,22 @@ function telnet.r {
 }
 
 function shell {
-  : "Run iex shell. Example:"
-  : "    run shell"
+  : "        Run iex shell. Example:"
+  : "                  bash run.sh shell"
   clear
   PORT=4001 iex -S mix
 }
 
 function test {
-  : "test watch. Example:"
-  : "    run test .env.test"
+  : "        test watch. Example:"
+  : "                  bash run.sh test"
   clear
   PORT=4002 mix test.interactive
 }
 
 function test.a {
-  : "test all. Example:"
-  : "    run test.a .env.test"
+  : "        test all. Example:"
+  : "                  bash run.sh test.a"
   clear
 
   local node_a
@@ -113,7 +113,8 @@ function docker.r {
 }
 
 function dev {
-  : "Run development commands."
+  : "        Run development commands. Example:"
+  : "                  bash run.sh dev"
   if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
     mix deps.get
     mix compile
@@ -123,12 +124,13 @@ function dev {
 }
 
 function help {
-  : "List tasks"
+  : "        List tasks"
 
   clear
 
   compgen -A function | grep -v "^_" | while read -r name; do
-    paste <(printf '%s' "$name") <(type "$name" | sed -nEe 's/^[[:space:]]*: ?"(.*)";/    \1/p')
+    paste <(printf '%s' "$name") <(type "$name" | sed -nEe 's/^[[:space:]]*: ?"(.*)";/ \1/p')
+    printf "\n"
   done
 
   printf "\n"
