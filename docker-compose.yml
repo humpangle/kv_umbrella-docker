@@ -18,9 +18,10 @@ services:
       - "not_used_deps:/app/deps/"
       - "not_used_.elixir_ls:/app/.elixir_ls/"
     networks:
-      kv:
+      kv-dev:
 
-  # For production build
+  # For production build. Use `prod` as host name for single node erlang
+  # distribution. E.g. `server1@prod`, `server2@prod` etc.
   prod:
     <<: *commons
     entrypoint: ["/app/bin/run", "start"]
@@ -28,6 +29,8 @@ services:
     # production image with docker compose
     volumes:
       - "not_used:/app/"
+    networks:
+      kv:
 
 volumes:
   not_used__build:
@@ -36,7 +39,10 @@ volumes:
   not_used:
 
 networks:
+  kv-dev:
+  # This defines the docker network used in single node erlang distribution.
+  # We can use the service name `prod` as host name.
   kv:
     driver: bridge
-    # Required for a stable docker network name for erlang distribution
+    # Required for a stable docker network name for erlang distribution.
     name: kv
