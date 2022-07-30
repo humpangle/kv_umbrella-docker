@@ -101,6 +101,8 @@ defmodule Kv.Reg do
 end
 
 defmodule Kv.Cmd do
+  require Logger
+
   alias Kv.Reg
 
   @doc ~S"""
@@ -199,6 +201,10 @@ defmodule Kv.Cmd do
                  Available servers: #{inspect(table)}\n\n"
 
     if selected_node == node() do
+      Logger.info(fn ->
+        ["Executing on node: `", inspect(node()), "`"]
+      end)
+
       apply(mod, fun, args)
     else
       {:kv_ts, selected_node}
