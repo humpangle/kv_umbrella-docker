@@ -37,6 +37,10 @@ function _env {
   "$splitted_envs"
 }
 
+function _is_prod {
+  [[ "$MIX_ENV" == "prod" ]] && echo 1
+}
+
 function telnet.r {
   : "Run telnet. Example:"
   : "                  bash run telnet.r [.env.file]"
@@ -96,6 +100,28 @@ function docker.test {
   : "Run non excluded tests inside docker. Example:"
   : "          run.sh docker.test"
   docker compose exec dev bash run.sh test
+}
+
+function docker.iex {
+  : "Run iex shell in docker. Example:"
+  : "          run.sh docker.iex"
+
+  if [[ "$(_is_prod)" ]]; then
+    docker compose exec prod bin/run remote
+  else
+    docker compose exec dev bash run.sh shell
+  fi
+}
+
+function docker.sh {
+  : "Run sh/bash inside docker. Example:"
+  : "          run.sh docker.sh"
+
+  if [[ "$(_is_prod)" ]]; then
+    docker compose exec prod sh
+  else
+    docker compose exec dev bash
+  fi
 }
 
 function docker.r {
