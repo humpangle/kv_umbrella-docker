@@ -44,7 +44,7 @@ defmodule KvS do
   defp write(s, {:error, :unknown}), do: :gen_tcp.send(s, @unknown_error)
 
   defp write(_, {:error, :closed}) do
-    Logger.info("Client closed conn - goodbye!")
+    Logger.info("Client closed connection - goodbye!")
     exit(:normal)
   end
 
