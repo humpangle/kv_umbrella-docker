@@ -92,6 +92,12 @@ function test.a {
   wait
 }
 
+function docker.test {
+  : "Run non excluded tests inside docker. Example:"
+  : "          run.sh docker.test"
+  docker compose exec dev bash run.sh test
+}
+
 function docker.r {
   : "Run production docker image."
 
