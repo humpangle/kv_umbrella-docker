@@ -10,7 +10,8 @@ defmodule KvS.Application do
     children =
       [
         {Task.Supervisor, name: :kv_s_ts}
-      ] ++ start_server()
+      ] ++
+        start_server()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
