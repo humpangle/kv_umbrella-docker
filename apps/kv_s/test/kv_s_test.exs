@@ -1,6 +1,8 @@
 defmodule KvSTest do
   use ExUnit.Case
 
+  @moduletag capture_log: true
+
   setup do
     port = KvS.Application.get_port_if_should_start_server()
 
