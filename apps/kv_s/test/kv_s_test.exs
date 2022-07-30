@@ -28,7 +28,7 @@ defmodule KvSTest do
     assert "1\r\n" == p(s, "GET n i\r\n")
     assert "ok\r\n" == p(s, "")
     assert "ok\r\n" == p(s, "DEL n i\r\n")
-    assert "unknown\r\n" == p(s, "DEL n i t\r\n")
+    assert "Unknown error\r\n" == p(s, "DEL n i t\r\n")
   end
 
   defp p(s, t) do

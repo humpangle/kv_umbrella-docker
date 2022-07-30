@@ -3,6 +3,8 @@ defmodule KvS do
 
   import Kv.Cmd
 
+  @unknown_error "Unknown error\r\n"
+
   def start(port) do
     {:ok, s} =
       :gen_tcp.listen(
@@ -39,7 +41,7 @@ defmodule KvS do
 
   defp write(s, {:ok, t}), do: :gen_tcp.send(s, t)
 
-  defp write(s, {:error, :unknown}), do: :gen_tcp.send(s, "unknown\r\n")
+  defp write(s, {:error, :unknown}), do: :gen_tcp.send(s, @unknown_error)
 
   defp write(_, {:error, :closed}) do
     Logger.info("Client closed conn - goodbye!")
