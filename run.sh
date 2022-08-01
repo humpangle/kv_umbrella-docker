@@ -102,6 +102,12 @@ function docker.test {
   docker compose exec dev bash run.sh test
 }
 
+function docker.test.a {
+  : "Run all tests inside docker. Example:"
+  : "          run.sh docker.test.a"
+  docker compose exec dev bash run.sh test.a
+}
+
 function docker.iex {
   : "Run iex shell in docker. Example:"
   : "          run.sh docker.iex"
