@@ -1,27 +1,5 @@
 import Config
 
-{routing_table, secret} =
-  if config_env() == :prod do
-    routing_table =
-      "ROUTING_TABLE"
-      |> System.fetch_env!()
-      |> Base.decode64!()
-      |> :erlang.binary_to_term()
-
-    secret = System.fetch_env!("RELEASE_COOKIE")
-
-    {routing_table, secret}
-  else
-    routing_table = [{?a..?z, node()}]
-
-    secret = "abc"
-
-    {routing_table, secret}
-  end
-
-config :kv,
-  routing_table: routing_table
-
 libcluster_debug =
   case System.get_env("DEBUG_LIB_CLUSTER") do
     nil ->
@@ -33,6 +11,8 @@ libcluster_debug =
     _ ->
       true
   end
+
+secret = if config_env() == :prod, do: System.fetch_env!("RELEASE_COOKIE"), else: "abc"
 
 config :libcluster,
   debug: libcluster_debug,

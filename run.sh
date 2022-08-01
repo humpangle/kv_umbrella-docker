@@ -41,11 +41,107 @@ function _is_prod {
   [[ "$MIX_ENV" == "prod" ]] && echo 1
 }
 
-function telnet.r {
+function _iex {
+  : "        Run iex shell. Example:"
+  : "                  bash run.sh shell"
+  clear
+
+  local node_name
+  node_name="kv_iex_$(_timestamp)@d"
+
+  PORT=4001 iex --sname "$node_name" --remsh kv_dev@d -S mix
+}
+
+function _test {
+  : "        test watch. Example:"
+  : "                  bash run.sh test"
+  clear
+
+  local node_name
+  node_name="kv_test_$(_timestamp)@d"
+
+  PORT=4002 \
+    elixir --sname "$node_name" -S \
+    mix test.interactive
+}
+
+function _test.a {
+  : "        test all. Example:"
+  : "                  bash run.sh test.a"
+  clear
+
+  local node_a
+  local node_b
+  local now
+
+  now="$(date +'%s')"
+  node_a="a_test_$now@d"
+  node_b="b_test_$now@d"
+
+  NO_START_SERVER=1 \
+    elixir --sname "$node_a" --no-halt -S \
+    mix &
+
+  PORT=4003 \
+    NODE1=$node_a \
+    NODE2=$node_b \
+    elixir --sname "$node_b" -S \
+    mix test --include distributed
+
+  wait
+}
+
+function test {
+  : "Run non excluded tests inside docker. Example:"
+  : "          run.sh test"
+  docker compose exec d bash run.sh _test
+}
+
+function test.a {
+  : "Run all tests inside docker. Example:"
+  : "          run.sh test.a"
+  docker compose exec d bash run.sh _test.a
+}
+
+function diex {
+  : "Run iex shell in docker. Example:"
+  : "          run.sh d.iex"
+
+  if [[ "$(_is_prod)" ]]; then
+    docker compose exec p bin/run remote
+  else
+    docker compose exec d bash run.sh _iex
+  fi
+}
+
+function sh {
+  : "Run sh/bash inside docker. Example:"
+  : "          run.sh sh"
+
+  if [[ "$(_is_prod)" ]]; then
+    docker compose exec p sh
+  else
+    docker compose exec d bash
+  fi
+}
+
+function dev {
+  : "Run development commands. Example:"
+  : "                  bash run.sh dev"
+  if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
+    mix deps.get
+    mix compile
+  fi
+
+  elixir --sname kv_dev@d --no-halt -S mix
+}
+
+function tel {
   : "Run telnet. Example:"
   : "                  bash run telnet.r [.env.file]"
 
   _env "$1"
+
   clear
 
   local cmd
@@ -56,110 +152,6 @@ function telnet.r {
   eval "$cmd"
 }
 
-function shell {
-  : "        Run iex shell. Example:"
-  : "                  bash run.sh shell"
-  clear
-  PORT=4001 iex -S mix
-}
-
-function test {
-  : "        test watch. Example:"
-  : "                  bash run.sh test"
-  clear
-  PORT=4002 mix test.interactive
-}
-
-function test.a {
-  : "        test all. Example:"
-  : "                  bash run.sh test.a"
-  clear
-
-  local node_a
-  local node_b
-  local now
-
-  now="$(date +'%s')"
-  node_a="a$now@127.0.0.1"
-  node_b="b$now@127.0.0.1"
-
-  NO_START_SERVER=1 \
-    elixir --name "$node_a" --no-halt -S \
-    mix &
-
-  PORT=4003 \
-    NODE1=$node_a \
-    NODE2=$node_b \
-    elixir --name "$node_b" -S \
-    mix test --include distributed
-
-  wait
-}
-
-function docker.test {
-  : "Run non excluded tests inside docker. Example:"
-  : "          run.sh docker.test"
-  docker compose exec dev bash run.sh test
-}
-
-function docker.test.a {
-  : "Run all tests inside docker. Example:"
-  : "          run.sh docker.test.a"
-  docker compose exec dev bash run.sh test.a
-}
-
-function docker.iex {
-  : "Run iex shell in docker. Example:"
-  : "          run.sh docker.iex"
-
-  if [[ "$(_is_prod)" ]]; then
-    docker compose exec prod bin/run remote
-  else
-    docker compose exec dev bash run.sh shell
-  fi
-}
-
-function docker.sh {
-  : "Run sh/bash inside docker. Example:"
-  : "          run.sh docker.sh"
-
-  if [[ "$(_is_prod)" ]]; then
-    docker compose exec prod sh
-  else
-    docker compose exec dev bash
-  fi
-}
-
-function docker.r {
-  : "Run production docker image."
-
-  _env "$1"
-  clear
-
-  local cmd
-  local container_name
-
-  container_name="kv-$(_timestamp)"
-
-  cmd="docker run -d --name $container_name $DOCKER_IMAGE_NAME"
-
-  _printf "$cmd"
-
-  echo "$@"
-
-  eval "$cmd"
-}
-
-function dev {
-  : "        Run development commands. Example:"
-  : "                  bash run.sh dev"
-  if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
-    mix deps.get
-    mix compile
-  fi
-
-  elixir --no-halt -S mix
-}
 
 function help {
   : "        List tasks"

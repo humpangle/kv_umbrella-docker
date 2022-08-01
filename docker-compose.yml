@@ -1,5 +1,6 @@
 services:
-  dev: &commons
+  # Development
+  d: &commons
     build:
       context: "."
       target: "${MIX_ENV:-dev}"
@@ -20,9 +21,8 @@ services:
     networks:
       kv-dev:
 
-  # For production build. Use `prod` as host name for single node erlang
-  # distribution. E.g. `server1@prod`, `server2@prod` etc.
-  prod:
+  # Production
+  p:
     <<: *commons
     entrypoint: ["/app/bin/run", "start"]
     # Volume mappings is not needed in production in case we want to run
