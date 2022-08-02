@@ -49,7 +49,12 @@ function _iex {
   local node_name
   node_name="kv_iex_$(_timestamp)@d"
 
-  PORT=4001 iex --sname "$node_name" --remsh kv_dev@d -S mix
+  PORT=4001 \
+    iex \
+    --sname "$node_name" \
+    --remsh kv_dev@d \
+    -S \
+    mix
 }
 
 function _test {
@@ -61,7 +66,9 @@ function _test {
   node_name="kv_test_$(_timestamp)@d"
 
   PORT=4002 \
-    elixir --sname "$node_name" -S \
+    elixir \
+    --sname "$node_name" \
+    -S \
     mix test.interactive
 }
 
@@ -79,14 +86,20 @@ function _test.a {
   node_b="b_test_$now@d"
 
   NO_START_SERVER=1 \
-    elixir --sname "$node_a" --no-halt -S \
+    elixir \
+    --sname "$node_a" \
+    --no-halt \
+    -S \
     mix &
 
-  PORT=4003 \
-    NODE1=$node_a \
-    NODE2=$node_b \
-    elixir --sname "$node_b" -S \
-    mix test --include distributed
+  clear &&
+    PORT=4003 \
+      NODE1=$node_a \
+      NODE2=$node_b \
+      elixir \
+      --sname "$node_b" \
+      -S \
+      mix test --include distributed
 
   wait
 }
@@ -94,13 +107,15 @@ function _test.a {
 function test {
   : "Run non excluded tests inside docker. Example:"
   : "          run.sh test"
-  docker compose exec d bash run.sh _test
+  docker compose exec d \
+    bash run.sh _test
 }
 
 function test.a {
   : "Run all tests inside docker. Example:"
   : "          run.sh test.a"
-  docker compose exec d bash run.sh _test.a
+  docker compose exec d \
+    bash run.sh _test.a
 }
 
 function diex {
@@ -108,9 +123,11 @@ function diex {
   : "          run.sh d.iex"
 
   if [[ "$(_is_prod)" ]]; then
-    docker compose exec p bin/run remote
+    docker compose exec p \
+      bin/run remote
   else
-    docker compose exec d bash run.sh _iex
+    docker compose exec d \
+      bash run.sh _iex
   fi
 }
 
@@ -119,9 +136,11 @@ function sh {
   : "          run.sh sh"
 
   if [[ "$(_is_prod)" ]]; then
-    docker compose exec p sh
+    docker compose exec p \
+      sh
   else
-    docker compose exec d bash
+    docker compose exec d \
+      bash
   fi
 }
 
@@ -133,7 +152,11 @@ function dev {
     mix compile
   fi
 
-  elixir --sname kv_dev@d --no-halt -S mix
+  elixir \
+    --sname kv_dev@d \
+    --no-halt \
+    -S \
+    mix
 }
 
 function tel {
@@ -151,7 +174,6 @@ function tel {
 
   eval "$cmd"
 }
-
 
 function help {
   : "        List tasks"
