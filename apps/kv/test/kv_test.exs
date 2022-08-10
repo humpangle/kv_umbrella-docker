@@ -7,23 +7,48 @@ defmodule KvTest do
 
   @moduletag capture_log: true
 
+  @range_a ?a..?m
+  @range_b ?n..?z
+
   setup_all do
     current = Application.get_env(:kv, :routing_table)
 
-    [a, b] =
-      [1, 2]
-      |> Enum.map(&String.to_atom(System.get_env("NODE#{&1}", "nil")))
+    nodes =
+      if a = System.get_env("OTHER_NODE") do
+        a = a |> String.to_atom()
 
-    Application.put_env(:kv, :routing_table, [
-      {?a..?m, a},
-      {?n..?z, b}
-    ])
+        Node.connect(a)
+        # Process.sleep(1000)
+
+        :global.sync()
+
+        b = node()
+
+        routing_table = [
+          {@range_a, a},
+          {@range_b, b}
+        ]
+
+        {:kv_ts, a}
+        |> Task.Supervisor.async(
+          Application,
+          :put_env,
+          [:kv, :routing_table, routing_table]
+        )
+        |> Task.await()
+
+        Application.put_env(:kv, :routing_table, routing_table)
+
+        [a: a, b: b]
+      else
+        []
+      end
 
     on_exit(fn ->
       Application.put_env(:kv, :routing_table, current)
     end)
 
-    [a: a, b: b]
+    nodes
   end
 
   @tag :distributed

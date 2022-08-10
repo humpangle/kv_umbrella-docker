@@ -1,26 +1,28 @@
 #=============================================================================
 # Development image
 #=============================================================================
-FROM hexpm/elixir:1.13.4-erlang-25.0.2-alpine-3.16.0 AS dev
+FROM hexpm/elixir:1.13.4-erlang-25.0.2-debian-bullseye-20210902-slim AS dev
 
 ENV \
   PORT=4000
 
 RUN \
-  addgroup -S kv \
-  && adduser -S kv -G kv \
-  && mkdir -p /app/_build \
+  groupadd kv \
+  && useradd -m -g kv kv \
   && mkdir -p /app/apps/kv \
   && mkdir -p /app/apps/kv_s \
+  && mkdir -p /app/_build \
   && chown -R kv:kv /app \
-  && apk add --no-cache \
+  && apt update  \
+  && apt-get install -y --no-install-recommends \
   openssl \
   git \
   ca-certificates \
   curl \
-  bash \
   inotify-tools \
-  iputils
+  iputils-ping \
+  && rm -rf /var/lib/apt/lists/* /usr/share/doc  /usr/share/man \
+  && apt-get clean
 
 USER kv
 
@@ -59,7 +61,7 @@ RUN \
 
 EXPOSE 4000
 
-CMD ["/bin/sh"]
+CMD ["/bin/bash"]
 
 #=============================================================================
 # BUILD IMAGE
@@ -80,7 +82,7 @@ RUN \
 #=============================================================================
 # PRODUCTION IMAGE
 #=============================================================================
-FROM hexpm/elixir:1.13.4-erlang-25.0.2-alpine-3.16.0 AS prod
+FROM hexpm/elixir:1.13.4-erlang-25.0.2-debian-bullseye-20210902-slim AS prod
 
 ARG RELEASE_NAME
 
@@ -91,10 +93,16 @@ ENV \
   RELEASE_NAME=${RELEASE_NAME}
 
 RUN \
-  addgroup -S kv \
-  && adduser -S kv -G kv \
-  && apk add --no-cache \
-  openssl
+  groupadd kv \
+  && useradd -m -g kv kv \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  openssl \
+  libtinfo5 \
+  curl \
+  && rm -rf /var/lib/apt/lists/* /usr/share/doc  /usr/share/man \
+  && apt-get clean
+
 
 USER kv
 

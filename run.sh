@@ -1,20 +1,7 @@
 #!/bin/bash
 # shellcheck disable=1090
 
-function _printf {
-  printf "\n%s\n\n" "$1"
-}
-
-function _timestamp {
-  date +'%s'
-}
-
-function _raise_on_no_env_file {
-  if [[ -z "$1" ]] || [[ ! -e "$1" ]]; then
-    printf "\nenv filename has not been provided or invalid\n\n"
-    exit 1
-  fi
-}
+temp_node_name='kv_temp'
 
 function _env {
   local env
@@ -34,134 +21,165 @@ function _env {
     splitted_envs=$(splitenvs "$env" --lines)
   fi
 
-  "$splitted_envs"
+  printf "%s" "$splitted_envs"
+}
+
+function _printf {
+  printf "\n%s\n\n" "$1"
+}
+
+function _timestamp {
+  date +'%s'
+}
+
+function _raise_on_no_env_file {
+  if [[ -n "$DOCKER_ENV_FILE" ]]; then
+    if [[ "$DOCKER_ENV_FILE" =~ .env.example ]]; then
+      printf "\nERROR: env filename can not be .env.example.\n\n"
+      exit 1
+    fi
+
+    return 0
+  fi
+
+  if [[ -z "$1" ]] || [[ ! -e "$1" ]]; then
+    printf "\nERROR:env filename has not been provided or invalid.\n"
+    printf "You may also source your environment file.\n\n"
+    exit 1
+  fi
 }
 
 function _is_prod {
   [[ "$MIX_ENV" == "prod" ]] && echo 1
 }
 
-function _iex {
-  : "        Run iex shell. Example:"
-  : "                  bash run.sh shell"
-  clear
+function _has_internet {
+  if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
+    printf 0
+  fi
 
-  local node_name
-  node_name="kv_iex_$(_timestamp)@d"
-
-  PORT=4001 \
-    iex \
-    --sname "$node_name" \
-    --remsh kv_dev@d \
-    -S \
-    mix
+  printf 1
 }
 
 function _test {
-  : "        test watch. Example:"
-  : "                  bash run.sh test"
   clear
 
-  local node_name
-  node_name="kv_test_$(_timestamp)@d"
-
-  PORT=4002 \
+  PORT=4001 \
     elixir \
-    --sname "$node_name" \
     -S \
     mix test.interactive
 }
 
-function _test.a {
-  : "        test all. Example:"
-  : "                  bash run.sh test.a"
-  clear
-
-  local node_a
-  local node_b
-  local now
-
-  now="$(date +'%s')"
-  node_a="a_test_$now@d"
-  node_b="b_test_$now@d"
-
-  NO_START_SERVER=1 \
-    elixir \
-    --sname "$node_a" \
-    --no-halt \
-    -S \
-    mix &
-
-  clear &&
-    PORT=4003 \
-      NODE1=$node_a \
-      NODE2=$node_b \
-      elixir \
-      --sname "$node_b" \
-      -S \
-      mix test --include distributed
-
-  wait
-}
-
 function test {
   : "Run non excluded tests inside docker. Example:"
-  : "          run.sh test"
-  docker compose exec d \
+  : "run.sh test"
+
+  _maybe_start_container "$@"
+
+  docker compose exec "$RELEASE_NAME" \
     bash run.sh _test
 }
 
+function _test.a {
+  local node
+
+  node="${temp_node_name}_test"
+
+  PORT=4001 \
+    NO_START_SERVER='' \
+    OTHER_NODE="$(_dev_node_name)" \
+    elixir \
+    --sname "$node" \
+    -S \
+    mix test --include distributed
+}
+
 function test.a {
-  : "Run all tests inside docker. Example:"
-  : "          run.sh test.a"
-  docker compose exec d \
-    bash run.sh _test.a
+  : "Test"
+
+  _maybe_start_container "$@"
+
+  chokidar \
+    "apps/**/*.ex*" \
+    -i "**/mix.exs" \
+    -i "**/priv/**" \
+    -i "**/config/**" \
+    --initial \
+    -c "clear && docker compose exec t bash run.sh _test.a"
+}
+
+function _dev_node_name {
+  printf "dev@%s" "$RELEASE_NAME"
+}
+
+function _iex {
+  local node
+  node="${temp_node_name}_$(_timestamp)"
+
+  iex \
+    --sname "$node" \
+    --remsh "$(_dev_node_name)" \
+    -S \
+    mix
 }
 
 function diex {
   : "Run iex shell in docker. Example:"
-  : "          run.sh d.iex"
+  : "run.sh diex"
+
+  _raise_on_no_env_file "$@"
 
   if [[ "$(_is_prod)" ]]; then
     docker compose exec p \
       bin/run remote
   else
-    docker compose exec d \
-      bash run.sh _iex
+    docker compose exec "$RELEASE_NAME" bash run.sh _iex
   fi
 }
 
-function sh {
-  : "Run sh/bash inside docker. Example:"
-  : "          run.sh sh"
-
-  if [[ "$(_is_prod)" ]]; then
-    docker compose exec p \
-      sh
-  else
-    docker compose exec d \
-      bash
+function _maybe_start_container {
+  if docker ps | grep -P "$COMPOSE_PROJECT_NAME" >/dev/null; then
+    return
   fi
-}
 
-function dev {
-  : "Run development commands. Example:"
-  : "                  bash run.sh dev"
-  if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
+  _raise_on_no_env_file "$@"
+
+  if [[ "$(_has_internet)" ]]; then
     mix deps.get
-    mix compile
   fi
+
+  mix compile
+
+  clear
+
+  docker compose up -d "$RELEASE_NAME"
+}
+
+function _dev {
+  if [[ "$(_has_internet)" ]]; then
+    mix deps.get
+  fi
+
+  mix compile
 
   elixir \
-    --sname kv_dev@d \
     --no-halt \
+    --name "$(_dev_node_name)" \
     -S \
     mix
 }
 
+function dev {
+  : "Dev"
+
+  _maybe_start_container "$@"
+
+  docker compose logs -f
+}
+
 function tel {
   : "Run telnet. Example:"
-  : "                  bash run telnet.r [.env.file]"
+  : "bash run telnet.r [.env.file]"
 
   _env "$1"
 
@@ -176,12 +194,9 @@ function tel {
 }
 
 function help {
-  : "        List tasks"
-
-  clear
-
+  : "List available tasks."
   compgen -A function | grep -v "^_" | while read -r name; do
-    paste <(printf '%s' "$name") <(type "$name" | sed -nEe 's/^[[:space:]]*: ?"(.*)";/ \1/p')
+    paste <(printf '%s' "$name") <(type "$name" | sed -nEe 's/^[[:space:]]*: ?"(.*)";/    \1/p')
     printf "\n"
   done
 
