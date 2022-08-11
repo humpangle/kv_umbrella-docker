@@ -21,12 +21,8 @@ defmodule Kv.NodesPoller do
   end
 
   @impl true
-  def handle_call(
-        :get_routing_table,
-        _from,
-        %{routing_table: routing_table} = state
-      ) do
-    {:reply, routing_table, state}
+  def handle_call(:get_routing_table, _from, state) do
+    {:reply, state.routing_table, state}
   end
 
   def handle_call(:get, _from, state) do
