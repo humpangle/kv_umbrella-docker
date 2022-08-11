@@ -116,7 +116,8 @@ function _iex {
   local node
   node="${temp_node_name}_$(_timestamp)"
 
-  iex \
+  PORT=5000 \
+    iex \
     --sname "$node" \
     --remsh "$(_dev_node_name)" \
     -S \
