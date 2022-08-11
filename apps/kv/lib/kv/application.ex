@@ -8,7 +8,7 @@ defmodule Kv.Application do
   @impl true
   def start(_type, _args) do
     children =
-      setup_libcluster() ++
+      maybe_setup_libcluster() ++
         [
           {Task.Supervisor, name: :kv_ts},
           {DynamicSupervisor, name: :kv_ds, strategy: :one_for_one},
@@ -22,11 +22,15 @@ defmodule Kv.Application do
     Supervisor.start_link(children, opts)
   end
 
-  defp setup_libcluster do
-    topologies = Application.get_env(:libcluster, :topologies)
+  defp maybe_setup_libcluster do
+    unless System.get_env("MIX_ENV") == "prod" do
+      topologies = Application.get_env(:libcluster, :topologies)
 
-    [
-      {Cluster.Supervisor, [topologies, [name: Kv.ClusterSupervisor]]}
-    ]
+      [
+        {Cluster.Supervisor, [topologies, [name: Kv.ClusterSupervisor]]}
+      ]
+    else
+      []
+    end
   end
 end
