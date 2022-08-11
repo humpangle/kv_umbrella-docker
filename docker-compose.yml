@@ -24,11 +24,6 @@ services:
   # test
   t:
     <<: *commons
-    volumes:
-      - ".:/app"
-      - "not_used__build_test:/app/_build/"
-      - "not_used_deps_test:/app/deps/"
-      - "not_used_.elixir_ls_test:/app/.elixir_ls/"
     networks:
       kv-test:
 
@@ -47,9 +42,6 @@ volumes:
   not_used__build:
   not_used_deps:
   not_used_.elixir_ls:
-  not_used__build_test:
-  not_used_deps_test:
-  not_used_.elixir_ls_test:
   not_used:
 
 networks:
