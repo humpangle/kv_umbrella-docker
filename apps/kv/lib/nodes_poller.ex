@@ -67,13 +67,13 @@ defmodule Kv.NodesPoller do
       |> Enum.sort()
 
     length_nodes = length(all_nodes)
-    per = div(25, length_nodes)
+    step = div(25, length_nodes)
 
     {divisions, _} =
       all_nodes
       |> Enum.reduce({[], 0}, fn next_node, {acc, index} ->
-        start = 97 + index + index * per
-        stop = if index + 1 == length_nodes, do: 122, else: start + per
+        start = 97 + index + index * step
+        stop = if index + 1 == length_nodes, do: 122, else: start + step
 
         acc = [{start..stop, next_node} | acc]
         {acc, index + 1}
