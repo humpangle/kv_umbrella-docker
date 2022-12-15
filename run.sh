@@ -71,16 +71,6 @@ function _test {
     mix test.interactive
 }
 
-function test {
-  : "Run non excluded tests inside docker. Example:"
-  : "run.sh test"
-
-  _maybe_start_container "$@"
-
-  docker compose exec "$RELEASE_NAME" \
-    bash run.sh _test
-}
-
 function _test.a {
   local node
 
@@ -96,50 +86,6 @@ function _test.a {
     --sname "$node" \
     -S \
     mix test --include distributed
-}
-
-function test.a {
-  : "Test"
-
-  _maybe_start_container "$@"
-
-  chokidar \
-    "apps/**/*.ex*" \
-    -i "**/mix.exs" \
-    -i "**/priv/**" \
-    -i "**/config/**" \
-    --initial \
-    -c "clear && docker compose exec t bash run.sh _test.a"
-}
-
-function _dev_node_name {
-  printf "dev@%s" "$RELEASE_NAME"
-}
-
-function _iex {
-  local node
-  node="${temp_node_name}_$(_timestamp)"
-
-  PORT=5000 \
-    iex \
-    --sname "$node" \
-    --remsh "$(_dev_node_name)" \
-    -S \
-    mix
-}
-
-function diex {
-  : "Run iex shell in docker. Example:"
-  : "run.sh diex"
-
-  _raise_on_no_env_file "$@"
-
-  if [[ "$(_is_prod)" ]]; then
-    docker compose exec p \
-      bin/run remote
-  else
-    docker compose exec "$RELEASE_NAME" bash run.sh _iex
-  fi
 }
 
 function _maybe_start_container {
@@ -172,6 +118,64 @@ function _dev {
     --name "$(_dev_node_name)" \
     -S \
     mix
+}
+
+function _dev_node_name {
+  printf "dev@%s" "$RELEASE_NAME"
+}
+
+function _iex {
+  local node
+  node="${temp_node_name}_$(_timestamp)"
+
+  PORT=5000 \
+    iex \
+    --sname "$node" \
+    --remsh "$(_dev_node_name)" \
+    -S \
+    mix
+}
+
+# -----------------------------------------------------------------------------
+# END HELPER FUNCTIONS
+# -----------------------------------------------------------------------------
+
+function test {
+  : "Run non excluded tests inside docker. Example:"
+  : "run.sh test"
+
+  _maybe_start_container "$@"
+
+  docker compose exec "$RELEASE_NAME" \
+    bash run.sh _test
+}
+
+function test.a {
+  : "Test"
+
+  _maybe_start_container "$@"
+
+  chokidar \
+    "apps/**/*.ex*" \
+    -i "**/mix.exs" \
+    -i "**/priv/**" \
+    -i "**/config/**" \
+    --initial \
+    -c "clear && docker compose exec t bash run.sh _test.a"
+}
+
+function diex {
+  : "Run iex shell in docker. Example:"
+  : "run.sh diex"
+
+  _raise_on_no_env_file "$@"
+
+  if [[ "$(_is_prod)" ]]; then
+    docker compose exec p \
+      bin/run remote
+  else
+    docker compose exec "$RELEASE_NAME" bash run.sh _iex
+  fi
 }
 
 function dev {
@@ -211,6 +215,7 @@ function rmc {
     docker rm "$container_name"
   fi
 }
+
 
 function help {
   : "List available tasks."
