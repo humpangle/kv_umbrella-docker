@@ -220,7 +220,7 @@ defmodule Kv.Cmd do
 
       apply(mod, fun, args)
     else
-      {Kv.TaskSupervisor, node_that_corresponds_to_bucket}
+      {Kv.RouterTaskSupervisor, node_that_corresponds_to_bucket}
       |> Task.Supervisor.async(
         __MODULE__,
         :route,
