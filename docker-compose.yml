@@ -8,7 +8,7 @@ services:
         RELEASE_NAME: "${RELEASE_NAME:-storage}"
     image: "${DOCKER_IMAGE_NAME:-kv-dev}"
     stdin_open: true
-    entrypoint: ["/bin/bash", "run.sh", "_dev"]
+    entrypoint: ["/bin/bash", "run.sh", "_d"]
     user: "kv"
     env_file: "${DOCKER_ENV_FILE:-.env}"
     ports:

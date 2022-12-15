@@ -106,7 +106,7 @@ function _maybe_start_container {
   docker compose up -d "$RELEASE_NAME"
 }
 
-function _dev {
+function _d {
   if _has_internet; then
     mix deps.get
   fi
@@ -148,7 +148,7 @@ function _get-containers {
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
 
-function test {
+function t {
   : "Run non excluded tests inside docker. Example:"
   : "run.sh test"
 
@@ -158,7 +158,7 @@ function test {
     bash run.sh _test
 }
 
-function test.a {
+function t.a {
   : "Test"
 
   _maybe_start_container "$@"
@@ -186,8 +186,8 @@ function diex {
   fi
 }
 
-function dev {
-  : "Dev"
+function d {
+  : "Start dev server"
 
   _maybe_start_container "$@"
 
