@@ -146,7 +146,7 @@ function _maybe_start_container {
 
   _raise_on_no_env_file "$@"
 
-  if [[ "$(_has_internet)" ]]; then
+  if _has_internet; then
     mix deps.get
   fi
 
@@ -158,7 +158,7 @@ function _maybe_start_container {
 }
 
 function _dev {
-  if [[ "$(_has_internet)" ]]; then
+  if _has_internet; then
     mix deps.get
   fi
 
