@@ -10,7 +10,7 @@ services:
     stdin_open: true
     entrypoint: ["/bin/bash", "run.sh", "_d"]
     user: "kv"
-    env_file: "${DOCKER_ENV_FILE:-.env}"
+    env_file: "${ENV_FILE:-.env}"
     ports:
       - "${DOCKER_HOST_PORT}:4000"
     volumes:
