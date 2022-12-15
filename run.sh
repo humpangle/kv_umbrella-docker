@@ -198,6 +198,20 @@ function tel {
   eval "$cmd"
 }
 
+function rmc {
+  : "Docker remove container"
+
+  _raise_on_no_env_file "$@"
+
+  local container_name
+  container_name="$(docker compose ps | grep "$COMPOSE_PROJECT_NAME" | awk '{print $1}')"
+
+  if [ -n "$container_name" ]; then
+    docker compose kill
+    docker rm "$container_name"
+  fi
+}
+
 function help {
   : "List available tasks."
   compgen -A function | grep -v "^_" | while read -r name; do
