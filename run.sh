@@ -136,6 +136,14 @@ function _iex {
     mix
 }
 
+function _get-containers {
+  printf "%s" "$(
+    docker ps --all --filter "ancestor=$DOCKER_IMAGE_NAME" 2>/dev/null |
+      awk 'NR !=1 {print $NF}' |
+      xargs # convert newline to space
+  )"
+}
+
 # -----------------------------------------------------------------------------
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
@@ -216,6 +224,30 @@ function rmc {
   fi
 }
 
+function rmi {
+  : "Docker remove image"
+
+  _raise_on_no_env_file "$@"
+
+  local image_id
+  local containers
+
+  containers=$(_get-containers)
+
+  if [ -n "$containers" ]; then
+    local cmd="docker rm --force $containers"
+    eval "$cmd"
+  fi
+
+  image_id="$(
+    docker images --filter "reference=$DOCKER_IMAGE_NAME" 2>/dev/null |
+      awk 'NR !=1 {print $3}'
+  )"
+
+  if [ -n "$image_id" ]; then
+    docker rmi "$image_id"
+  fi
+}
 
 function help {
   : "List available tasks."
