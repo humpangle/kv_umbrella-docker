@@ -29,6 +29,17 @@ defmodule KvTest do
           {@range_b, b}
         ]
 
+        # Why don't we hardcode the routing table in config/test.exs? Because
+        # the test node name is dynamic. But why does the test node name need
+        # to be dynamic? Why not use a static node name (since test node was
+        # started with --sname)? Because dev node was started with --name and
+        # the host part of the name is dynamic (it is the docker compose
+        # service name). But the test service name is known simply as `t`, sure
+        # we can hardcode that? We can do that, but what if we want to change
+        # the docker-compose service name or we wish to use another networking
+        # infrastructure such as kubernetes? Then it means any time we change
+        # our networking infrastructure, we need to touch our application code.
+
         {:kv_ts, a}
         |> Task.Supervisor.async(
           Application,
