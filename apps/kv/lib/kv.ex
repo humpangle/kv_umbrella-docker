@@ -5,10 +5,16 @@ defmodule Kv do
     Agent.start_link(fn -> %{} end)
   end
 
-  def put(n, i, v), do: Agent.update(n, &Map.put(&1, i, v))
-  def get(n, i), do: Agent.get(n, &Map.get(&1, i))
-  def del(n, i), do: Agent.update(n, &Map.delete(&1, i))
-  defdelegate done(n), to: Agent, as: :stop
+  def put(bucket_name, item, value),
+    do: Agent.update(bucket_name, &Map.put(&1, item, value))
+
+  def get(bucket_name, item),
+    do: Agent.get(bucket_name, &Map.get(&1, item))
+
+  def del(bucket_name, item),
+    do: Agent.update(bucket_name, &Map.delete(&1, item))
+
+  defdelegate done(bucket_name), to: Agent, as: :stop
 end
 
 defmodule Kv.Reg do
@@ -22,10 +28,10 @@ defmodule Kv.Reg do
     GenServer.start_link(__MODULE__, name, opts)
   end
 
-  def create(reg, n), do: GenServer.call(reg, {:create, n})
+  def create(reg, bucket_name), do: GenServer.call(reg, {:create, bucket_name})
 
-  def lookup(reg, n) do
-    case :ets.lookup(reg, n) do
+  def lookup(reg, bucket_name) do
+    case :ets.lookup(reg, bucket_name) do
       [{_, pid}] ->
         {:ok, pid}
 
@@ -54,11 +60,11 @@ defmodule Kv.Reg do
   end
 
   @impl true
-  def handle_call({:create, n}, _from, {reg, _} = state) do
+  def handle_call({:create, bucket_name}, _from, {reg, _} = state) do
     {state, pid} =
-      case lookup(reg, n) do
+      case lookup(reg, bucket_name) do
         {:error, _} ->
-          do_create(state, n)
+          do_create(state, bucket_name)
 
         {:ok, pid} ->
           {state, pid}
@@ -74,8 +80,8 @@ defmodule Kv.Reg do
         {nil, _} ->
           state
 
-        {n, refs} ->
-          :ets.delete(reg, n)
+        {bucket_name, refs} ->
+          :ets.delete(reg, bucket_name)
           state = {reg, refs}
 
           case reason do
@@ -83,7 +89,7 @@ defmodule Kv.Reg do
               state
 
             _ ->
-              {state, _} = do_create(state, n)
+              {state, _} = do_create(state, bucket_name)
               state
           end
       end
@@ -91,10 +97,10 @@ defmodule Kv.Reg do
     {:noreply, state}
   end
 
-  defp do_create({reg, refs} = _state, n) do
-    {:ok, pid} = DynamicSupervisor.start_child(:kv_ds, Kv)
-    refs = Map.put(refs, Process.monitor(pid), n)
-    :ets.insert(reg, {n, pid})
+  defp do_create({reg, refs} = _state, bucket_name) do
+    {:ok, pid} = DynamicSupervisor.start_child(Kv.DynamicSupervisor, Kv)
+    refs = Map.put(refs, Process.monitor(pid), bucket_name)
+    :ets.insert(reg, {bucket_name, pid})
     state = {reg, refs}
     {state, pid}
   end
@@ -112,41 +118,41 @@ defmodule Kv.Cmd do
 
   Test with comment:
 
-        iex> Kv.Cmd.parse("CREATE n\r\n")
-        {:ok, {:create, "n"}}
+        iex> Kv.Cmd.parse("CREATE bucket_name\r\n")
+        {:ok, {:create, "bucket_name"}}
 
-        iex> Kv.Cmd.parse("PUT n i v\r\n")
-        {:ok, {:put, "n", "i", "v"}}
+        iex> Kv.Cmd.parse("PUT bucket_name i v\r\n")
+        {:ok, {:put, "bucket_name", "i", "v"}}
 
-        iex> Kv.Cmd.parse("GET n i\r\n")
-        {:ok, {:get, "n", "i"}}
+        iex> Kv.Cmd.parse("GET bucket_name i\r\n")
+        {:ok, {:get, "bucket_name", "i"}}
 
-        iex> Kv.Cmd.parse("DEL n i\r\n")
-        {:ok, {:del, "n", "i"}}
+        iex> Kv.Cmd.parse("DEL bucket_name i\r\n")
+        {:ok, {:del, "bucket_name", "i"}}
 
         iex> Kv.Cmd.parse("\r\n")
         {:ok, :newline}
 
   Test with comment:
 
-        iex> Kv.Cmd.parse("PUT n i\r\n")
+        iex> Kv.Cmd.parse("PUT bucket_name i\r\n")
         {:error, :unknown}
 
   """
 
   def parse(line) do
     case String.split(line) do
-      ["CREATE", n] ->
-        {:ok, {:create, n}}
+      ["CREATE", bucket_name] ->
+        {:ok, {:create, bucket_name}}
 
-      ["PUT", n, i, v] ->
-        {:ok, {:put, n, i, v}}
+      ["PUT", bucket_name, item, value] ->
+        {:ok, {:put, bucket_name, item, value}}
 
-      ["GET", n, i] ->
-        {:ok, {:get, n, i}}
+      ["GET", bucket_name, item] ->
+        {:ok, {:get, bucket_name, item}}
 
-      ["DEL", n, i] ->
-        {:ok, {:del, n, i}}
+      ["DEL", bucket_name, item] ->
+        {:ok, {:del, bucket_name, item}}
 
       [] ->
         {:ok, :newline}
@@ -160,55 +166,66 @@ defmodule Kv.Cmd do
 
   def run(:newline), do: {:ok, "\r\n"}
 
-  def run({:create, n}) do
-    route(n, Reg, :create, [Reg, n])
+  def run({:create, bucket_name}) do
+    route(bucket_name, Reg, :create, [Reg, bucket_name])
     {:ok, "ok\r\n"}
   end
 
-  def run({:get, n, i}) do
-    lookup(n, fn pid ->
-      v = Kv.get(pid, i)
-      {:ok, "#{v}\r\nok\r\n"}
+  def run({:get, bucket_name, item}) do
+    lookup(bucket_name, fn pid ->
+      value = Kv.get(pid, item)
+      {:ok, "#{value}\r\nok\r\n"}
     end)
   end
 
-  def run({:del, n, i}) do
-    lookup(n, fn pid ->
-      Kv.del(pid, i)
+  def run({:del, bucket_name, item}) do
+    lookup(bucket_name, fn pid ->
+      Kv.del(pid, item)
       {:ok, "ok\r\n"}
     end)
   end
 
-  def run({:put, n, i, v}) do
-    lookup(n, fn pid ->
-      Kv.put(pid, i, v)
+  def run({:put, bucket_name, item, value}) do
+    lookup(bucket_name, fn pid ->
+      Kv.put(pid, item, value)
       {:ok, "ok\r\n"}
     end)
   end
 
-  defp lookup(n, cb) do
-    with {:ok, pid} <- route(n, Reg, :lookup, [Reg, n]), do: cb.(pid)
+  defp lookup(bucket_name, cb) do
+    with {:ok, pid} <- route(bucket_name, Reg, :lookup, [Reg, bucket_name]) do
+      cb.(pid)
+    end
   end
 
-  def route(n, mod, fun, args) do
+  def route(bucket_name, mod, fun, args) do
     table = Application.fetch_env!(:kv, :routing_table)
 
-    first = String.first(n) |> String.to_charlist() |> hd()
+    first_char_of_bucket =
+      String.first(bucket_name)
+      |> String.to_charlist()
+      |> hd()
 
-    {_, selected_node} =
-      Enum.find(table, fn {list, _} -> first in list end) ||
-        raise "No server is available to serve bucket named: #{inspect(n)}.
+    {_, node_that_corresponds_to_bucket} =
+      Enum.find(table, fn {list, _} -> first_char_of_bucket in list end) ||
+        raise "No server is available to serve bucket named: #{inspect(bucket_name)}.
                  Available servers: #{inspect(table)}\n\n"
 
-    if selected_node == node() do
+    this_node = node()
+
+    if node_that_corresponds_to_bucket == this_node do
       Logger.info(fn ->
-        ["Executing on node: `", inspect(node()), "`"]
+        ["Executing on node: `", inspect(this_node), "`"]
       end)
 
       apply(mod, fun, args)
     else
-      {:kv_ts, selected_node}
-      |> Task.Supervisor.async(__MODULE__, :route, [n, mod, fun, args])
+      {Kv.TaskSupervisor, node_that_corresponds_to_bucket}
+      |> Task.Supervisor.async(
+        __MODULE__,
+        :route,
+        [bucket_name, mod, fun, args]
+      )
       |> Task.await()
     end
   end

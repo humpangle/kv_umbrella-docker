@@ -7,26 +7,26 @@ defmodule KvTest do
 
   @moduletag capture_log: true
 
-  @range_a ?a..?m
-  @range_b ?n..?z
+  @range_dev_node ?a..?m
+  @range_test_node ?n..?z
 
   setup_all do
     current = Application.get_env(:kv, :routing_table)
 
     nodes =
-      if a = System.get_env("OTHER_NODE") do
-        a = a |> String.to_atom()
+      if dev_node = System.get_env("DEV_NODE") do
+        dev_node = dev_node |> String.to_atom()
 
-        Node.connect(a)
+        Node.connect(dev_node)
         # Process.sleep(1000)
 
         :global.sync()
 
-        b = node()
+        test_node = node()
 
         routing_table = [
-          {@range_a, a},
-          {@range_b, b}
+          {@range_dev_node, dev_node},
+          {@range_test_node, test_node}
         ]
 
         # Why don't we hardcode the routing table in config/test.exs? Because
@@ -40,7 +40,7 @@ defmodule KvTest do
         # infrastructure such as kubernetes? Then it means any time we change
         # our networking infrastructure, we need to touch our application code.
 
-        {:kv_ts, a}
+        {Kv.TaskSupervisor, dev_node}
         |> Task.Supervisor.async(
           Application,
           :put_env,
@@ -50,7 +50,7 @@ defmodule KvTest do
 
         Application.put_env(:kv, :routing_table, routing_table)
 
-        [a: a, b: b]
+        [dev_node: dev_node, test_node: test_node]
       else
         []
       end
@@ -63,8 +63,8 @@ defmodule KvTest do
   end
 
   @tag :distributed
-  test "route/4", %{a: a, b: b} do
-    assert a ==
+  test "route/4", %{dev_node: dev_node, test_node: test_node} do
+    assert dev_node ==
              Cmd.route(
                "#{<<Enum.random(97..109)::8>>}1",
                Kernel,
@@ -72,7 +72,7 @@ defmodule KvTest do
                []
              )
 
-    assert b ==
+    assert test_node ==
              Cmd.route(
                "#{<<Enum.random(110..122)::8>>}1",
                Kernel,
@@ -94,23 +94,24 @@ defmodule KvTest do
     end
 
     test "kv ops", %{test: reg} do
-      n = "shopping"
-      i = "milk"
-      assert {:error, _} = Reg.lookup(reg, n)
-      assert {:ok, pid1} = Reg.create(reg, n)
-      assert {:ok, ^pid1} = Reg.lookup(reg, n)
+      bucket_name = "shopping"
+      item = "milk"
+
+      assert {:error, _} = Reg.lookup(reg, bucket_name)
+      assert {:ok, pid1} = Reg.create(reg, bucket_name)
+      assert {:ok, ^pid1} = Reg.lookup(reg, bucket_name)
       assert :ok == Kv.done(pid1)
-      catch_exit(Kv.get(pid1, i))
+      catch_exit(Kv.get(pid1, item))
       Process.sleep(1)
-      assert {:error, _} = Reg.lookup(reg, n)
+      assert {:error, _} = Reg.lookup(reg, bucket_name)
 
-      {:ok, pid2} = Reg.create(reg, n)
-      assert nil == Kv.get(pid2, i)
+      {:ok, pid2} = Reg.create(reg, bucket_name)
+      assert nil == Kv.get(pid2, item)
       Process.exit(pid2, :kill)
-      catch_exit(Kv.get(pid2, i))
+      catch_exit(Kv.get(pid2, item))
       Process.sleep(1)
 
-      assert {:ok, pid3} = Reg.lookup(reg, n)
+      assert {:ok, pid3} = Reg.lookup(reg, bucket_name)
       refute pid3 == pid2
     end
   end

@@ -86,9 +86,12 @@ function _test.a {
 
   node="${temp_node_name}_test"
 
+  # Dev node already started by docker. We start a test node here. Inside
+  # kv_test.ex (the test node), we connect to the dev node.
+
   PORT=4001 \
     NO_START_SERVER='' \
-    OTHER_NODE="$(_dev_node_name)" \
+    DEV_NODE="$(_dev_node_name)" \
     elixir \
     --sname "$node" \
     -S \

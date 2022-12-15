@@ -22,7 +22,7 @@ defmodule KvS do
 
   defp loop(s) do
     {:ok, cs} = :gen_tcp.accept(s)
-    {:ok, pid} = Task.Supervisor.start_child(:kv_s_ts, fn -> accept(cs) end)
+    {:ok, pid} = Task.Supervisor.start_child(KvS.TaskSupervisor, fn -> accept(cs) end)
     :ok = :gen_tcp.controlling_process(cs, pid)
 
     loop(s)

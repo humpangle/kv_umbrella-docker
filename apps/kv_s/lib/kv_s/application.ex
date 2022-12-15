@@ -9,7 +9,7 @@ defmodule KvS.Application do
   def start(_type, _args) do
     children =
       [
-        {Task.Supervisor, name: :kv_s_ts}
+        {Task.Supervisor, name: KvS.TaskSupervisor}
       ] ++
         start_server()
 

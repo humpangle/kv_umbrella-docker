@@ -10,8 +10,8 @@ defmodule Kv.Application do
     children =
       maybe_setup_libcluster() ++
         [
-          {Task.Supervisor, name: :kv_ts},
-          {DynamicSupervisor, name: :kv_ds, strategy: :one_for_one},
+          {Task.Supervisor, name: Kv.TaskSupervisor},
+          {DynamicSupervisor, name: Kv.DynamicSupervisor, strategy: :one_for_one},
           Kv.Reg,
           Kv.NodesPoller
         ]
