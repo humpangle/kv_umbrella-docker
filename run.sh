@@ -65,6 +65,7 @@ function _test {
   clear
 
   PORT=4001 \
+    NO_START_SERVER='' \
     elixir \
     -S \
     mix test.interactive
