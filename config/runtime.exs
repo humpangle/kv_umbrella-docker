@@ -1,21 +1,9 @@
 import Config
 
-libcluster_debug =
-  case System.get_env("DEBUG_LIB_CLUSTER") do
-    nil ->
-      false
-
-    "" ->
-      false
-
-    _ ->
-      true
-  end
-
 secret = if config_env() == :prod, do: System.fetch_env!("RELEASE_COOKIE"), else: "abc"
 
 config :libcluster,
-  debug: libcluster_debug,
+  debug: System.get_env("DEBUG_LIB_CLUSTER", "") != "",
   topologies: [
     kv_gossip: [
       strategy: Elixir.Cluster.Strategy.Gossip,
