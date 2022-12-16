@@ -143,6 +143,22 @@ function _get-containers {
   )"
 }
 
+function _get-container-name {
+  local the_container_name
+
+  if [ -n "$CONTAINER_NAME" ]; then
+    the_container_name="$CONTAINER_NAME"
+  else
+    the_container_name="$(
+      docker compose ps |
+        grep "$COMPOSE_PROJECT_NAME" |
+        awk '{print $1}'
+    )"
+  fi
+
+  printf '%s' "$the_container_name"
+}
+
 # -----------------------------------------------------------------------------
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
@@ -217,12 +233,12 @@ function rmc {
 
   _raise_on_no_env_file "$@"
 
-  local container_name
-  container_name="$(docker compose ps | grep "$COMPOSE_PROJECT_NAME" | awk '{print $1}')"
+  local the_container_name
+  the_container_name="$(docker compose ps | grep "$COMPOSE_PROJECT_NAME" | awk '{print $1}')"
 
-  if [ -n "$container_name" ]; then
+  if [ -n "$the_container_name" ]; then
     docker compose kill
-    docker rm "$container_name"
+    docker rm "$the_container_name"
   fi
 }
 
@@ -231,6 +247,8 @@ function rmi {
   : "  run.sh rmi"
 
   _raise_on_no_env_file "$@"
+
+  docker compose down -v &>/dev/null
 
   # container name = $COMPOSE_PROJECT_NAME-(docker compose service name)-(current count of containers started with that service)
 
@@ -248,9 +266,9 @@ function rmi {
     eval "$cmd"
   fi
 
-  for container_name in "${containers[@]}"; do
+  for the_container_name in "${containers[@]}"; do
     mapfile -t volumes_suffixes < <(
-      echo -n "$container_name" |
+      echo -n "$the_container_name" |
         awk 'BEGIN { FS = "-"; }
       { for(i=1; i < (NF - 1) ; i++ ) print $i }'
     )
@@ -274,6 +292,31 @@ function rmi {
   if [ -n "$image_id" ]; then
     docker rmi "$image_id"
   fi
+}
+
+function remote {
+  : "Connect to remote"
+
+  _raise_on_no_env_file
+
+  local remote_ip
+  local node
+  local the_container_name
+
+  node="${temp_node_name}_$(_timestamp)@127.0.0.1"
+
+  the_container_name="$(_get-container-name)"
+
+  remote_ip="$(
+    docker inspect \
+      --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+      "$the_container_name"
+  )"
+
+  iex \
+    --name "${node}" \
+    --cookie "${RELEASE_COOKIE}" \
+    --remsh "kv@${remote_ip}"
 }
 
 function help {
