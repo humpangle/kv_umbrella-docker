@@ -1,8 +1,9 @@
 defmodule Kv.NodesPoller do
   use GenServer
 
-  @get_nodes_poll_interval_secs 5
+  @get_nodes_poll_interval_secs :timer.seconds(5)
 
+  # Poll every 5 second for 1 hour to see if other nodes have joined.
   @get_nodes_count_timeout div(:timer.hours(1), @get_nodes_poll_interval_secs)
 
   ## Client API
@@ -50,9 +51,7 @@ defmodule Kv.NodesPoller do
   defp get_nodes(retries) do
     case Node.list() do
       [] ->
-        @get_nodes_poll_interval_secs
-        |> :timer.seconds()
-        |> Process.sleep()
+        Process.sleep(@get_nodes_poll_interval_secs)
 
         get_nodes(retries + 1)
 
