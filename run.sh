@@ -139,8 +139,7 @@ function _iex {
 function _get-containers {
   printf "%s" "$(
     docker ps --all --filter "ancestor=$DOCKER_IMAGE_NAME" 2>/dev/null |
-      awk 'NR !=1 {print $NF}' |
-      xargs # convert newline to space
+      awk 'NR !=1 {print $NF}'
   )"
 }
 
@@ -229,15 +228,39 @@ function rmi {
 
   _raise_on_no_env_file "$@"
 
+  # container name = $COMPOSE_PROJECT_NAME-(docker compose service name)-(current count of containers started with that service)
+
   local image_id
   local containers
+  local volumes_suffixes
+  local volumes_suffixes_str
 
-  containers=$(_get-containers)
+  mapfile -t containers < <(_get-containers)
 
-  if [ -n "$containers" ]; then
-    local cmd="docker rm --force $containers"
+  local containers_as_str="${containers[*]}"
+
+  if [ -n "$containers_as_str" ]; then
+    local cmd="docker rm --force --volumes $containers_as_str"
     eval "$cmd"
   fi
+
+  for container_name in "${containers[@]}"; do
+    mapfile -t volumes_suffixes < <(
+      echo -n "$container_name" |
+        awk 'BEGIN { FS = "-"; }
+      { for(i=1; i < (NF - 1) ; i++ ) print $i }'
+    )
+
+    volumes_suffixes_str=$(
+      IFS=-
+      echo "${volumes_suffixes[*]}"
+    )
+
+    docker volume ls |
+      grep "$volumes_suffixes_str" |
+      awk '{print $2}' |
+      xargs docker volume rm
+  done
 
   image_id="$(
     docker images --filter "reference=$DOCKER_IMAGE_NAME" 2>/dev/null |
