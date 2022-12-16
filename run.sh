@@ -149,7 +149,7 @@ function _get-containers {
 
 function t {
   : "Run non excluded tests inside docker. Example:"
-  : "run.sh test"
+  : "  run.sh t"
 
   _maybe_start_container "$@"
 
@@ -158,7 +158,8 @@ function t {
 }
 
 function t.a {
-  : "Test"
+  : "Run all tests including distributed tests. Example:"
+  : "  run.sh t.a"
 
   _maybe_start_container "$@"
 
@@ -173,11 +174,11 @@ function t.a {
 
 function diex {
   : "Run iex shell in docker. Example:"
-  : "run.sh diex"
+  : "  run.sh diex"
 
   _raise_on_no_env_file "$@"
 
-  if [[ "$(_is_prod)" ]]; then
+  if _is_prod; then
     docker compose exec p \
       bin/run remote
   else
@@ -186,7 +187,8 @@ function diex {
 }
 
 function d {
-  : "Start dev server"
+  : "Start dev/tests server: Example:"
+  : "  r d"
 
   _maybe_start_container "$@"
 
@@ -195,7 +197,7 @@ function d {
 
 function tel {
   : "Run telnet. Example:"
-  : "bash run telnet.r [.env.file]"
+  : "  run.sh teln [.env.file]"
 
   _env "$1"
 
@@ -210,7 +212,8 @@ function tel {
 }
 
 function rmc {
-  : "Docker remove container"
+  : "Docker remove container: Example:"
+  : "  run.sh rmc"
 
   _raise_on_no_env_file "$@"
 
@@ -224,7 +227,8 @@ function rmc {
 }
 
 function rmi {
-  : "Docker remove image"
+  : "Docker remove image and associated containers and volumes. Example:"
+  : "  run.sh rmi"
 
   _raise_on_no_env_file "$@"
 
