@@ -262,8 +262,8 @@ function rmi {
 
   local image_id
   local containers
-  local volumes_suffixes
-  local volumes_suffixes_str
+  local volumes_prefixes
+  local volumes_prefixes_str
 
   mapfile -t containers < <(_get-containers)
 
@@ -275,19 +275,19 @@ function rmi {
   fi
 
   for the_container_name in "${containers[@]}"; do
-    mapfile -t volumes_suffixes < <(
+    mapfile -t volumes_prefixes < <(
       echo -n "$the_container_name" |
         awk 'BEGIN { FS = "-"; }
       { for(i=1; i < (NF - 1) ; i++ ) print $i }'
     )
 
-    volumes_suffixes_str=$(
+    volumes_prefixes_str=$(
       IFS=-
-      echo "${volumes_suffixes[*]}"
+      echo "${volumes_prefixes[*]}"
     )
 
     docker volume ls |
-      grep "$volumes_suffixes_str" |
+      grep "$volumes_prefixes_str" |
       awk '{print $2}' |
       xargs docker volume rm
   done
