@@ -5,7 +5,7 @@ services:
       context: "."
       target: "${MIX_ENV:-dev}"
       args:
-        RELEASE_NAME: "${RELEASE_NAME:-storage}"
+        RELEASE_NAME: "${RELEASE_NAME:-kv_storage}"
     image: "${DOCKER_IMAGE_NAME:-kv-dev}"
     stdin_open: true
     entrypoint: ["/bin/bash", "run.sh", "_d"]

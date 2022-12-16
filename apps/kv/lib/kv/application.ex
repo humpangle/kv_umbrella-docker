@@ -23,7 +23,7 @@ defmodule Kv.Application do
   end
 
   defp maybe_setup_libcluster do
-    unless System.get_env("MIX_ENV") == "prod" do
+    if System.get_env("MIX_ENV") == "prod" do
       topologies = Application.get_env(:libcluster, :topologies)
 
       [

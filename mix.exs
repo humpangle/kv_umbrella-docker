@@ -8,14 +8,14 @@ defmodule KvUmbrella.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
-        storage: [
+        kv_storage: [
           version: "0.0.0",
           include_executables_for: [:unix],
           applications: [
             kv: :permanent
           ]
         ],
-        server_storage: [
+        kv_server: [
           version: "0.0.0",
           include_executables_for: [:unix],
           applications: [
