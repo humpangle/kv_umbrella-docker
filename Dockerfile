@@ -1,7 +1,7 @@
 #=============================================================================
 # Development image
 #=============================================================================
-FROM hexpm/elixir:1.13.4-erlang-25.0.2-debian-bullseye-20210902-slim AS dev
+FROM hexpm/elixir:1.14.2-erlang-25.2-debian-bullseye-20221004-slim AS dev
 
 ENV \
   PORT=4000
@@ -82,7 +82,7 @@ RUN \
 #=============================================================================
 # PRODUCTION IMAGE
 #=============================================================================
-FROM hexpm/elixir:1.13.4-erlang-25.0.2-debian-bullseye-20210902-slim AS prod
+FROM hexpm/elixir:1.14.2-erlang-25.2-debian-bullseye-20221004-slim AS prod
 
 ARG RELEASE_NAME
 
