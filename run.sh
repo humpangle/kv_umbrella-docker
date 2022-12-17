@@ -81,6 +81,7 @@ function _test.a {
 
   PORT=4001 \
     NO_START_SERVER='' \
+    DO_NOT_AUTO_JOIN_NODES=1 \
     DEV_NODE="$(_dev_node_name)" \
     elixir \
     --sname "$node" \
@@ -139,6 +140,7 @@ function _iex {
   node="${temp_node_name}_$(_timestamp)"
 
   PORT=5000 \
+    DO_NOT_AUTO_JOIN_NODES=1 \
     iex \
     --sname "$node" \
     --remsh "$(_dev_node_name)" \

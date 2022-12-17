@@ -34,16 +34,9 @@ defmodule Kv.NodesPoller do
 
   @impl true
   def handle_continue(_tag, _state) do
-    routing_table =
-      if Application.get_env(:kv, :fetch_nodes) do
-        routing_table = get_nodes(0)
+    routing_table = get_nodes(0)
 
-        Application.put_env(:kv, :routing_table, routing_table)
-
-        routing_table
-      else
-        []
-      end
+    Application.put_env(:kv, :routing_table, routing_table)
 
     {:noreply, %{routing_table: routing_table}}
   end

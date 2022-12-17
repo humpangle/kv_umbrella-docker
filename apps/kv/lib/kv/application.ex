@@ -12,8 +12,7 @@ defmodule Kv.Application do
         [
           {Task.Supervisor, name: Kv.RouterTaskSupervisor},
           {DynamicSupervisor, name: Kv.DynamicSupervisor, strategy: :one_for_one},
-          Kv.Reg,
-          Kv.NodesPoller
+          Kv.Reg
         ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -24,11 +23,12 @@ defmodule Kv.Application do
 
   defp maybe_setup_libcluster do
     # We don't want to set up libcluster in test
-    if System.get_env("NO_AUTO_NODE_JOIN", "") == "" do
+    if System.get_env("DO_NOT_AUTO_JOIN_NODES", "") == "" do
       topologies = Application.get_env(:libcluster, :topologies)
 
       [
-        {Cluster.Supervisor, [topologies, [name: Kv.ClusterSupervisor]]}
+        {Cluster.Supervisor, [topologies, [name: Kv.ClusterSupervisor]]},
+        Kv.NodesPoller
       ]
     else
       []
