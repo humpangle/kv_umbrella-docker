@@ -72,9 +72,9 @@ function _test {
 }
 
 function _test.a {
-  local node
+  local temp_node_name
 
-  node="${temp_node_name}_test"
+  temp_node_name="${temp_node_name}_test@$(hostname -i)"
 
   # Dev node already started by docker. We start a test node here. Inside
   # kv_test.ex (the test node), we connect to the dev node.
@@ -84,7 +84,7 @@ function _test.a {
     DO_NOT_AUTO_JOIN_NODES=1 \
     DEV_NODE="$(_dev_node_name)" \
     elixir \
-    --sname "$node" \
+    --name "$temp_node_name" \
     --cookie "${RELEASE_COOKIE}" \
     -S \
     mix test --include distributed
@@ -124,28 +124,22 @@ function _d {
 }
 
 function _dev_node_name {
-  local host
-
-  if [ -n "$NO_AUTO_NODE_JOIN" ]; then
-    host="$RELEASE_NAME"
-  else
-    host="$DOCKER_IP4"
-  fi
-
-  printf "%s@%s" "$COMPOSE_PROJECT_NAME" "$host"
+  printf "%s@%s" "$COMPOSE_PROJECT_NAME" "$(hostname -i)"
 }
 
 function _iex {
-  local node
-  node="${temp_node_name}_$(_timestamp)"
+  local temp_node_name
+
+  temp_node_name="${temp_node_name}_$(_timestamp)@$(hostname -i)"
 
   PORT=5000 \
     DO_NOT_AUTO_JOIN_NODES=1 \
     iex \
-    --sname "$node" \
+    --name "$temp_node_name" \
     --remsh "$(_dev_node_name)" \
     --werl \
     --hidden \
+    --cookie "${RELEASE_COOKIE}" \
     -S \
     mix
 }
