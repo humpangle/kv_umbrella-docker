@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=1090
+# shellcheck disable=1090,2207
 
 temp_node_name='kv_temp'
 
@@ -84,6 +84,7 @@ function _test.a {
     DEV_NODE="$(_dev_node_name)" \
     elixir \
     --sname "$node" \
+    --cookie "${RELEASE_COOKIE}" \
     -S \
     mix test --include distributed
 }
@@ -116,12 +117,21 @@ function _d {
   elixir \
     --no-halt \
     --name "$(_dev_node_name)" \
+    --cookie "${RELEASE_COOKIE}" \
     -S \
     mix
 }
 
 function _dev_node_name {
-  printf "dev@%s" "$RELEASE_NAME"
+  local host
+
+  if [ -n "$NO_AUTO_NODE_JOIN" ]; then
+    host="$RELEASE_NAME"
+  else
+    host="$DOCKER_IP4"
+  fi
+
+  printf "%s@%s" "$COMPOSE_PROJECT_NAME" "$host"
 }
 
 function _iex {
@@ -256,7 +266,7 @@ function rmi {
 
   _raise_on_no_env_file "$@"
 
-  docker compose down -v &>/dev/null
+  # docker compose down -v &>/dev/null
 
   # container name = $COMPOSE_PROJECT_NAME-(docker compose service name)-(current count of containers started with that service)
 
@@ -267,14 +277,10 @@ function rmi {
 
   mapfile -t containers < <(_get-containers)
 
-  local containers_as_str="${containers[*]}"
-
-  if [ -n "$containers_as_str" ]; then
-    local cmd="docker rm --force --volumes $containers_as_str"
-    eval "$cmd"
-  fi
-
   for the_container_name in "${containers[@]}"; do
+    docker kill --signal SIGTERM "$the_container_name"
+    docker rm --force --volumes "$the_container_name"
+
     mapfile -t volumes_prefixes < <(
       echo -n "$the_container_name" |
         awk 'BEGIN { FS = "-"; }
@@ -325,6 +331,34 @@ function remote {
     --name "${node}" \
     --cookie "${RELEASE_COOKIE}" \
     --remsh "kv@${remote_ip}"
+}
+
+function list_used_ports {
+  : "List ports in use"
+
+  local line_regex="^[^#]+PORT.*"
+
+  local ports=()
+
+  local old_ifs="$IFS"
+
+  for filename in ./.env*; do
+    if [[ "$filename" == "./.env.example" ]]; then
+      continue
+    fi
+
+    while read -r line; do
+      if [[ "$line" =~ $line_regex ]]; then
+        ports+=("$(echo "$line" | cut -d'=' -f 2-)")
+      fi
+    done <<<"$(cat "$filename")"
+  done
+
+  IFS=$'\n' ports=($(sort <<<"${ports[*]}"))
+
+  IFS="$old_ifs"
+
+  echo "${ports[*]}"
 }
 
 function help {

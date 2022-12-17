@@ -21,6 +21,7 @@ services:
       - "not_used_.elixir_ls:/app/.elixir_ls/"
     networks:
       kv-dev:
+        ipv4_address: "${DOCKER_IP4}"
 
   # test
   t:
@@ -49,6 +50,9 @@ networks:
   kv-dev:
     driver: bridge
     name: kv-dev
+    ipam:
+      config:
+        - subnet: "${DOCKER_SUBNET}"
   kv-release:
     driver: bridge
     name: kv-release

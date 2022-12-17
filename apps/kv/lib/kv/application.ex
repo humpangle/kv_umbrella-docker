@@ -23,7 +23,8 @@ defmodule Kv.Application do
   end
 
   defp maybe_setup_libcluster do
-    if System.get_env("MIX_ENV") == "prod" do
+    # We don't want to set up libcluster in test
+    if System.get_env("NO_AUTO_NODE_JOIN", "") == "" do
       topologies = Application.get_env(:libcluster, :topologies)
 
       [
