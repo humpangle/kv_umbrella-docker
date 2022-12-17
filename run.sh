@@ -144,6 +144,8 @@ function _iex {
     iex \
     --sname "$node" \
     --remsh "$(_dev_node_name)" \
+    --werl \
+    --hidden \
     -S \
     mix
 }
