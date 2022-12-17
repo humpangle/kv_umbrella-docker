@@ -359,6 +359,15 @@ function list_used_ports {
   echo "${ports[*]}"
 }
 
+function p {
+  : "Start production app. Example:"
+  : "  run.sh p"
+
+  _raise_on_no_env_file
+
+  docker compose up p
+}
+
 function help {
   : "List available tasks."
   compgen -A function | grep -v "^_" | while read -r name; do
