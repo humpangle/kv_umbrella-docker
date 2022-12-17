@@ -1,6 +1,8 @@
 defmodule Kv.NodesPoller do
   use GenServer
 
+  require Logger
+
   @get_nodes_poll_interval_secs :timer.seconds(5)
 
   # Poll every 5 second for 1 hour to see if other nodes have joined.
@@ -49,6 +51,19 @@ defmodule Kv.NodesPoller do
   defp get_nodes(@get_nodes_count_timeout), do: split_nodes([])
 
   defp get_nodes(retries) do
+    Logger.info(fn ->
+      [
+        "Polling for connected nodes:",
+        "\n",
+        "Remaining: ",
+        to_string(@get_nodes_count_timeout - retries),
+        "/",
+        to_string(@get_nodes_count_timeout),
+        " attempts.",
+        "\n"
+      ]
+    end)
+
     case Node.list() do
       [] ->
         Process.sleep(@get_nodes_poll_interval_secs)
@@ -68,8 +83,20 @@ defmodule Kv.NodesPoller do
     length_nodes = length(all_nodes)
     count = div(26, length_nodes)
 
-    ?a..?z
-    |> Enum.chunk_every(count)
-    |> Enum.zip(all_nodes)
+    routing_table =
+      ?a..?z
+      |> Enum.chunk_every(count)
+      |> Enum.zip(all_nodes)
+
+    Logger.info(fn ->
+      [
+        "Polling ended. Routing table:",
+        "\n",
+        inspect(routing_table),
+        "\n"
+      ]
+    end)
+
+    routing_table
   end
 end
