@@ -154,15 +154,11 @@ function _get-containers {
 function _get-container-name {
   local the_container_name
 
-  if [ -n "$CONTAINER_NAME" ]; then
-    the_container_name="$CONTAINER_NAME"
-  else
-    the_container_name="$(
-      docker compose ps |
-        grep "$COMPOSE_PROJECT_NAME" |
-        awk '{print $1}'
-    )"
-  fi
+  the_container_name="$(
+    docker compose ps |
+      grep "$COMPOSE_PROJECT_NAME" |
+      awk '{print $1}'
+  )"
 
   printf '%s' "$the_container_name"
 }
@@ -263,10 +259,6 @@ function rmi {
   : "  run.sh rmi"
 
   _raise_on_no_env_file "$@"
-
-  # docker compose down -v &>/dev/null
-
-  # container name = $COMPOSE_PROJECT_NAME-(docker compose service name)-(current count of containers started with that service)
 
   local image_id
   local containers
