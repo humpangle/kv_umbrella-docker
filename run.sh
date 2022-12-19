@@ -326,7 +326,7 @@ function remote {
 function list_used_ports {
   : "List ports in use"
 
-  local line_regex="^[^#]+PORT.*"
+  local line_regex="^[^#]+PORT.*="
 
   local ports=()
 
