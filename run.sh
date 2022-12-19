@@ -323,10 +323,10 @@ function remote {
     --remsh "kv@${remote_ip}"
 }
 
-function list_used_ports {
+function ls-ports {
   : "List ports in use"
 
-  local line_regex="^[^#]+PORT.*="
+  local line_regex="^[^#]+PORT.*=[^$]+"
 
   local ports=()
 
@@ -344,7 +344,8 @@ function list_used_ports {
     done <<<"$(cat "$filename")"
   done
 
-  IFS=$'\n' ports=($(sort <<<"${ports[*]}"))
+  # shellcheck disable=2207
+  IFS=$'\n' ports=($(sort -u <<<"${ports[*]}"))
 
   IFS="$old_ifs"
 
