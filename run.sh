@@ -66,6 +66,7 @@ function _test {
 
   PORT=4001 \
     NO_START_SERVER='' \
+    DO_NOT_AUTO_JOIN_NODES=1 \
     elixir \
     -S \
     mix test.interactive
