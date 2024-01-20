@@ -40,8 +40,8 @@ defmodule KvTest do
         # infrastructure such as kubernetes? Then it means any time we change
         # our networking infrastructure, we need to touch our application code.
 
-        {Kv.RouterTaskSupervisor, dev_node}
-        |> Task.Supervisor.async(
+        Task.Supervisor.async(
+          {Kv.RouterTaskSupervisor, dev_node},
           Application,
           :put_env,
           [:kv, :routing_table, routing_table]
