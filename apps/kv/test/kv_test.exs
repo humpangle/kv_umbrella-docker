@@ -14,8 +14,8 @@ defmodule KvTest do
     current = Application.get_env(:kv, :routing_table)
 
     nodes =
-      if dev_node = System.get_env("DEV_NODE") do
-        dev_node = dev_node |> String.to_atom()
+      if dev_node_as_string = System.get_env("DEV_NODE") do
+        dev_node = dev_node_as_string |> String.to_atom()
 
         Node.connect(dev_node)
         # Process.sleep(1000)
