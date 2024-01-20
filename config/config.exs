@@ -1,7 +1,11 @@
 import Config
 
+# We don't want to set up libcluster in test
+create_cluster = System.get_env("DO_NOT_AUTO_JOIN_NODES", "") == ""
+
 config :kv,
-  routing_table: [{?a..?z, node()}]
+  routing_table: [{?a..?z, node()}],
+  create_cluster: create_cluster
 
 if Mix.env() == :dev || Mix.env() == :test do
   config :mix_test_interactive,

@@ -22,8 +22,7 @@ defmodule Kv.Application do
   end
 
   defp maybe_setup_libcluster do
-    # We don't want to set up libcluster in test
-    if System.get_env("DO_NOT_AUTO_JOIN_NODES", "") == "" do
+    if Application.get_env(:kv, :create_cluster) do
       topologies = Application.get_env(:libcluster, :topologies)
 
       [
