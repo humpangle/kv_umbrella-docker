@@ -3,27 +3,6 @@
 
 temp_node_name='kv_temp'
 
-function _env {
-  local env
-  local splitted_envs=""
-
-  if [[ -n "$1" ]]; then
-    env="$1"
-  elif [[ -e .env ]]; then
-    env=".env"
-  fi
-
-  if [[ -n "$env" ]]; then
-    set -a
-    . $env
-    set +a
-
-    splitted_envs=$(splitenvs "$env" --lines)
-  fi
-
-  printf "%s" "$splitted_envs"
-}
-
 function _printf {
   printf "\n%s\n\n" "$1"
 }
@@ -228,7 +207,7 @@ function tel {
   : "Run telnet. Example:"
   : "  run.sh teln [.env.file]"
 
-  _env "$1"
+  _raise_on_no_env_file
 
   clear
 
