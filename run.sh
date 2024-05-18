@@ -73,9 +73,9 @@ function _test {
 }
 
 function _test.a {
-  local temp_node_name
+  local _temp_node_name
 
-  temp_node_name="${temp_node_name}_test@$(hostname -i)"
+  _temp_node_name="${temp_node_name}_test@$(hostname -i)"
 
   # Dev node already started by docker. We start a test node here. Inside
   # kv_test.ex (the test node), we connect to the dev node.
@@ -85,7 +85,7 @@ function _test.a {
     DO_NOT_AUTO_JOIN_NODES=1 \
     DEV_NODE="$(_dev_node_name)" \
     elixir \
-    --name "$temp_node_name" \
+    --name "$_temp_node_name" \
     --cookie "${RELEASE_COOKIE}" \
     -S \
     mix test --include distributed
