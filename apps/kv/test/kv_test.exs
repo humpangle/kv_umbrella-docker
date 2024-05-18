@@ -18,7 +18,6 @@ defmodule KvTest do
         dev_node = dev_node_as_string |> String.to_atom()
 
         Node.connect(dev_node)
-        # Process.sleep(1000)
 
         :global.sync()
 
