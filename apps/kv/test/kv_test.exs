@@ -1,16 +1,17 @@
 defmodule KvTest do
   use ExUnit.Case
 
+  require Logger
   alias Kv.{Cmd, Reg}
 
   doctest Cmd
 
-  @moduletag capture_log: true
+  # @moduletag capture_log: true
 
   @range_dev_node ?a..?m
   @range_test_node ?n..?z
 
-  setup_all do
+  setup_all %{module: module} do
     current = Application.get_env(:kv, :routing_table)
 
     nodes =
@@ -18,10 +19,20 @@ defmodule KvTest do
         dev_node = dev_node_as_string |> String.to_atom()
 
         Node.connect(dev_node)
-
         :global.sync()
-
         test_node = node()
+
+        Logger.warning(fn ->
+          [
+            "Module [",
+            to_string(module),
+            "] -- This node ",
+            to_string(test_node),
+            " is connected to dev node: ",
+            dev_node_as_string,
+            " (a.k.a other node)"
+          ]
+        end)
 
         routing_table = [
           {@range_dev_node, dev_node},
