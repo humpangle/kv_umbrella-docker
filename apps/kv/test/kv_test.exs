@@ -4,9 +4,9 @@ defmodule KvTest do
   require Logger
   alias Kv.{Cmd, Reg}
 
-  doctest Cmd
+  @moduletag :capture_log
 
-  # @moduletag capture_log: true
+  doctest Cmd
 
   @range_dev_node ?a..?m
   @range_test_node ?n..?z
@@ -72,7 +72,7 @@ defmodule KvTest do
     nodes
   end
 
-  @tag :distributed
+  @tag distributed: true, capture_log: false
   test "route/4", %{dev_node: dev_node, test_node: test_node} do
     assert dev_node ==
              Cmd.route(
