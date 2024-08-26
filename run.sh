@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=1090,2207
 
 temp_node_name='kv_temp'
