@@ -72,29 +72,35 @@ defmodule KvTest do
     nodes
   end
 
-  @tag distributed: true, capture_log: false
-  test "route/4", %{dev_node: dev_node, test_node: test_node} do
-    assert dev_node ==
-             Cmd.route(
-               "#{<<Enum.random(97..109)::8>>}1",
-               Kernel,
-               :node,
-               []
-             )
+  describe "routing" do
+    @describetag :distributed
 
-    assert test_node ==
-             Cmd.route(
-               "#{<<Enum.random(110..122)::8>>}1",
-               Kernel,
-               :node,
-               []
-             )
+    @tag capture_log: false
+    test "route/4 - succeeds", %{dev_node: dev_node, test_node: test_node} do
+      assert dev_node ==
+               Cmd.route(
+                 "#{<<Enum.random(97..109)::8>>}1",
+                 Kernel,
+                 :node,
+                 []
+               )
 
-    assert_raise(
-      RuntimeError,
-      ~r/11/,
-      fn -> Cmd.route("11", Kernel, :node, []) end
-    )
+      assert test_node ==
+               Cmd.route(
+                 "#{<<Enum.random(110..122)::8>>}1",
+                 Kernel,
+                 :node,
+                 []
+               )
+    end
+
+    test "route/4 - fails" do
+      assert_raise(
+        RuntimeError,
+        ~r/11/,
+        fn -> Cmd.route("11", Kernel, :node, []) end
+      )
+    end
   end
 
   describe "kv" do
