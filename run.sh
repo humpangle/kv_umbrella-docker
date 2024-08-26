@@ -141,6 +141,10 @@ function _get-container-name {
   printf '%s' "$the_container_name"
 }
 
+_clear() {
+  clear && printf '\e[3J'
+}
+
 # -----------------------------------------------------------------------------
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
@@ -167,7 +171,7 @@ function t.a {
     -i "**/priv/**" \
     -i "**/config/**" \
     --initial \
-    -c "clear && docker compose exec t bash run.sh _test.a"
+    -c "bash run.sh _clear && docker compose exec t bash run.sh _test.a"
 }
 
 function diex {
