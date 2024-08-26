@@ -17,6 +17,13 @@ defmodule KvS do
         ]
       )
 
+    Logger.info(fn ->
+      [
+        "Obtained a TCP server socket ",
+        inspect(s)
+      ]
+    end)
+
     loop(s)
   end
 
@@ -25,18 +32,38 @@ defmodule KvS do
     {:ok, pid} = Task.Supervisor.start_child(KvS.TaskSupervisor, fn -> accept(cs) end)
     :ok = :gen_tcp.controlling_process(cs, pid)
 
+    Logger.info(fn ->
+      [
+        "TCP server socket ",
+        inspect(s),
+        " received client connection socket ",
+        inspect(cs)
+      ]
+    end)
+
     loop(s)
   end
 
-  defp accept(s) do
+  defp accept(cs) do
+    client_message = :gen_tcp.recv(cs, 0)
+
+    Logger.info(fn ->
+      [
+        "Client socket ",
+        inspect(cs),
+        " sent message:",
+        inspect(client_message)
+      ]
+    end)
+
     msg =
-      with {:ok, l} <- :gen_tcp.recv(s, 0),
+      with {:ok, l} <- client_message,
            {:ok, cmd} <- parse(l),
            do: run(cmd)
 
-    write(s, msg)
+    write(cs, msg)
 
-    accept(s)
+    accept(cs)
   end
 
   defp write(s, {:ok, t}), do: :gen_tcp.send(s, t)
