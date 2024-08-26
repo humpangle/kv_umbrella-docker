@@ -40,34 +40,6 @@ function _has_internet {
   printf 1
 }
 
-function _test {
-  PORT=4001 \
-    NO_START_SERVER='' \
-    DO_NOT_AUTO_JOIN_NODES=1 \
-    elixir \
-    -S \
-    mix test.interactive
-}
-
-function _test.a {
-  local _temp_node_name
-
-  _temp_node_name="${temp_node_name}_test@$(hostname -i)"
-
-  # Dev node already started by docker. We start a test node here. Inside
-  # kv_test.ex (the test node), we connect to the dev node.
-
-  PORT=4001 \
-    NO_START_SERVER='' \
-    DO_NOT_AUTO_JOIN_NODES=1 \
-    DEV_NODE="$(_dev_node_name)" \
-    elixir \
-    --name "$_temp_node_name" \
-    --cookie "${RELEASE_COOKIE}" \
-    -S \
-    mix test --include distributed
-}
-
 function _maybe_start_container {
   if docker ps | grep -P "$COMPOSE_PROJECT_NAME" >/dev/null; then
     return
@@ -81,9 +53,7 @@ function _maybe_start_container {
 
   mix compile
 
-  clear
-
-  docker compose up -d "$RELEASE_NAME"
+  docker compose up -d d
 }
 
 function _d {
@@ -149,14 +119,27 @@ _clear() {
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
 
+DOCKER_COMPOSE_CMD="docker compose exec \
+    -e NO_START_SERVER= \
+    -e DO_NOT_AUTO_JOIN_NODES=1 \
+    -e DEBUG_LIB_CLUSTER=1 \
+    -e PORT=4001 \
+    d \
+    bash run.sh"
+
 function t {
   : "Run non excluded tests inside docker. Example:"
   : "  run.sh t"
 
   _maybe_start_container "$@"
 
-  docker compose exec "$RELEASE_NAME" \
-    bash run.sh _test
+  eval "$DOCKER_COMPOSE_CMD _test"
+}
+
+function _test {
+    elixir \
+    -S \
+    mix test.interactive
 }
 
 function t.a {
@@ -171,7 +154,23 @@ function t.a {
     -i "**/priv/**" \
     -i "**/config/**" \
     --initial \
-    -c "bash run.sh _clear && docker compose exec t bash run.sh _test.a"
+    -c "bash run.sh _clear && $DOCKER_COMPOSE_CMD _test.a"
+}
+
+function _test.a {
+  local _temp_node_name
+
+  _temp_node_name="${temp_node_name}_test_$(date +'%s')@$(hostname -i)"
+
+  # Dev node already started by docker. We start a test node here. Inside
+  # kv_test.ex (the test node), we connect to the dev node.
+
+  DEV_NODE="$(_dev_node_name)" \
+    elixir \
+    --name "$_temp_node_name" \
+    --cookie "${RELEASE_COOKIE}" \
+    -S \
+    mix test --include distributed
 }
 
 function diex {
@@ -184,7 +183,7 @@ function diex {
     docker compose exec p \
       bin/run remote
   else
-    docker compose exec "$RELEASE_NAME" bash run.sh _iex
+    docker compose exec d bash run.sh _iex
   fi
 }
 

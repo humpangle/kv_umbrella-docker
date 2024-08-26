@@ -23,12 +23,6 @@ services:
     networks:
       kv-dev:
 
-  # test
-  t:
-    <<: *commons
-    networks:
-      kv-test:
-
   # Production
   p:
     <<: *commons
@@ -53,6 +47,3 @@ networks:
   kv-release:
     driver: bridge
     name: kv-release
-  kv-test:
-    driver: bridge
-    name: kv-test
