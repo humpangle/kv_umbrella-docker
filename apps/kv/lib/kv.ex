@@ -120,24 +120,24 @@ defmodule Kv.Cmd do
 
   Test with comment:
 
-        iex> Kv.Cmd.parse("CREATE bucket_name\r\n")
-        {:ok, {:create, "bucket_name"}}
+        iex> Kv.Cmd.parse("CREATE doc_bucket_name\r\n")
+        {:ok, {:create, "doc_bucket_name"}}
 
-        iex> Kv.Cmd.parse("PUT bucket_name i v\r\n")
-        {:ok, {:put, "bucket_name", "i", "v"}}
+        iex> Kv.Cmd.parse("PUT doc_bucket_name item value\r\n")
+        {:ok, {:put, "doc_bucket_name", "item", "value"}}
 
-        iex> Kv.Cmd.parse("GET bucket_name i\r\n")
-        {:ok, {:get, "bucket_name", "i"}}
+        iex> Kv.Cmd.parse("GET doc_bucket_name item\r\n")
+        {:ok, {:get, "doc_bucket_name", "item"}}
 
-        iex> Kv.Cmd.parse("DEL bucket_name i\r\n")
-        {:ok, {:del, "bucket_name", "i"}}
+        iex> Kv.Cmd.parse("DEL doc_bucket_name item\r\n")
+        {:ok, {:del, "doc_bucket_name", "item"}}
 
         iex> Kv.Cmd.parse("\r\n")
         {:ok, :newline}
 
   Test with comment:
 
-        iex> Kv.Cmd.parse("PUT bucket_name i\r\n")
+        iex> Kv.Cmd.parse("PUT doc_bucket_name item\r\n")
         {:error, :unknown}
 
   """
