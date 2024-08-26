@@ -48,6 +48,14 @@ r t
 
 Run all tests including distributed tests:
 
+Get chokidar cli (if you do not have it already):
+
+```sh
+npm install --global chokidar-cli
+```
+
+Run tests:
+
 ```sh
 r t.a
 ```

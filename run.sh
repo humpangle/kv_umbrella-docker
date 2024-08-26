@@ -141,12 +141,6 @@ function _get-container-name {
   printf '%s' "$the_container_name"
 }
 
-function _maybe-install-chokidar {
-  if ! command -v chokidar; then
-    npm install --global chokidar
-  fi
-}
-
 # -----------------------------------------------------------------------------
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
@@ -164,8 +158,6 @@ function t {
 function t.a {
   : "Run all tests including distributed tests. Example:"
   : "  run.sh t.a"
-
-  _maybe-install-chokidar
 
   _maybe_start_container "$@"
 
