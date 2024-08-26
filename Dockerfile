@@ -1,7 +1,11 @@
 #=============================================================================
 # Development image
 #=============================================================================
-FROM hexpm/elixir:1.14.2-erlang-25.2-debian-bullseye-20221004-slim AS dev
+
+ARG CONTAINER_BUILDER_IMAGE="${CONTAINER_BUILDER_IMAGE:-hexpm/elixir:1.17.2-erlang-27.0.1-debian-bookworm-20240722-slim}"
+ARG RUNNER_IMAGE="${RUNNER_IMAGE:-debian:bookworm-20240722-slim}"
+
+FROM ${CONTAINER_BUILDER_IMAGE} AS dev
 
 ENV \
   PORT=4000
@@ -82,7 +86,8 @@ RUN \
 #=============================================================================
 # PRODUCTION IMAGE
 #=============================================================================
-FROM hexpm/elixir:1.14.2-erlang-25.2-debian-bullseye-20221004-slim AS prod
+
+FROM ${RUNNER_IMAGE} AS prod
 
 ARG RELEASE_NAME
 

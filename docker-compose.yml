@@ -6,6 +6,8 @@ services:
       target: "${MIX_ENV:-dev}"
       args:
         RELEASE_NAME: "${RELEASE_NAME:-kv_storage}"
+        CONTAINER_BUILDER_IMAGE: ${CONTAINER_BUILDER_IMAGE}
+        RUNNER_IMAGE: ${RUNNER_IMAGE}
     image: "${DOCKER_IMAGE_NAME:-kv-dev}"
     stdin_open: true
     entrypoint: ["/bin/bash", "run.sh", "_d"]

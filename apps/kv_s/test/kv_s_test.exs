@@ -8,7 +8,7 @@ defmodule KvSTest do
 
     {:ok, socket} =
       :gen_tcp.connect(
-        '127.0.0.1',
+        ~c"127.0.0.1",
         port,
         [
           :binary,
