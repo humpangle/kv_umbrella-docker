@@ -1,6 +1,8 @@
 defmodule Kv do
   use Agent
 
+  require Logger
+
   def start_link(_) do
     Agent.start_link(fn -> %{} end)
   end
@@ -141,25 +143,37 @@ defmodule Kv.Cmd do
   """
 
   def parse(line) do
-    case String.split(line) do
-      ["CREATE", bucket_name] ->
-        {:ok, {:create, bucket_name}}
+    parsed =
+      case String.split(line) do
+        ["CREATE", bucket_name] ->
+          {:ok, {:create, bucket_name}}
 
-      ["PUT", bucket_name, item, value] ->
-        {:ok, {:put, bucket_name, item, value}}
+        ["PUT", bucket_name, item, value] ->
+          {:ok, {:put, bucket_name, item, value}}
 
-      ["GET", bucket_name, item] ->
-        {:ok, {:get, bucket_name, item}}
+        ["GET", bucket_name, item] ->
+          {:ok, {:get, bucket_name, item}}
 
-      ["DEL", bucket_name, item] ->
-        {:ok, {:del, bucket_name, item}}
+        ["DEL", bucket_name, item] ->
+          {:ok, {:del, bucket_name, item}}
 
-      [] ->
-        {:ok, :newline}
+        [] ->
+          {:ok, :newline}
 
-      _ ->
-        {:error, :unknown}
-    end
+        _ ->
+          {:error, :unknown}
+      end
+
+    Logger.info(fn ->
+      [
+        "Message to parse: ",
+        line,
+        "Parsed result: ",
+        inspect(parsed)
+      ]
+    end)
+
+    parsed
   end
 
   def run(cmd)
@@ -198,7 +212,7 @@ defmodule Kv.Cmd do
     end
   end
 
-  def route(bucket_name, mod, fun, args) do
+  def route(bucket_name, mod, fun, args, referrer_node \\ nil) do
     table = Application.fetch_env!(:kv, :routing_table)
 
     first_char_of_bucket =
@@ -215,16 +229,29 @@ defmodule Kv.Cmd do
 
     if node_that_corresponds_to_bucket == this_node do
       Logger.info(fn ->
-        ["Executing on node: `", inspect(this_node), "`"]
+        [
+          "Executing on this node: ",
+          inspect(this_node),
+          "",
+          if(
+            referrer_node,
+            do: ["\nReferrer node: ", inspect(referrer_node)],
+            else: []
+          )
+        ]
       end)
 
       apply(mod, fun, args)
     else
+      Logger.info(fn ->
+        ["Will execute on other node: ", inspect(node_that_corresponds_to_bucket), ""]
+      end)
+
       {Kv.RouterTaskSupervisor, node_that_corresponds_to_bucket}
       |> Task.Supervisor.async(
         __MODULE__,
         :route,
-        [bucket_name, mod, fun, args]
+        [bucket_name, mod, fun, args, this_node]
       )
       |> Task.await()
     end
