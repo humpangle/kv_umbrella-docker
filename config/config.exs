@@ -13,6 +13,7 @@ if Mix.env() == :dev || Mix.env() == :test do
 
   config :mix_test_interactive,
     # clear: true,
+    timestamp: true,
     exclude: [~r/___scratch/],
     command: {"elixir", command_args}
 end
