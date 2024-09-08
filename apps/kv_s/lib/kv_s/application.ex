@@ -28,7 +28,7 @@ defmodule KvS.Application do
   end
 
   def get_port_if_should_start_server do
-    if System.get_env("NO_START_SERVER", "") == "" do
+    if System.get_env("START_SERVER") == "true" do
       System.fetch_env!("PORT")
       |> String.to_integer()
     end

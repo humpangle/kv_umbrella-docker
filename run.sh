@@ -34,10 +34,10 @@ function _is_prod {
 
 function _has_internet {
   if ping -q -c 1 -W 1 8.8.8.8 >/dev/null; then
-    printf 0
+    return 0
   fi
 
-  printf 1
+  return 1
 }
 
 function _maybe_start_container {
@@ -81,7 +81,7 @@ function _iex {
   temp_node_name="${temp_node_name}_$(_timestamp)@$(hostname -i)"
 
   PORT=5000 \
-    DO_NOT_AUTO_JOIN_NODES=1 \
+    AUTO_JOIN_NODES=false \
     iex \
     --name "$temp_node_name" \
     --remsh "$(_dev_node_name)" \
@@ -119,10 +119,10 @@ _clear() {
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
 
-DOCKER_COMPOSE_CMD="docker compose exec \
-    -e NO_START_SERVER= \
-    -e DO_NOT_AUTO_JOIN_NODES=1 \
-    -e DEBUG_LIB_CLUSTER=1 \
+DOCKER_COMPOSE_CMD_FOR_TEST="docker compose exec \
+    -e START_SERVER=true \
+    -e AUTO_JOIN_NODES=false \
+    -e DEBUG_LIB_CLUSTER=true \
     -e PORT=4001 \
     d \
     bash run.sh"
@@ -133,7 +133,7 @@ function t {
 
   _maybe_start_container "$@"
 
-  eval "$DOCKER_COMPOSE_CMD _test"
+  eval "$DOCKER_COMPOSE_CMD_FOR_TEST _test"
 }
 
 function _test {
@@ -154,7 +154,7 @@ function t.a {
     -i "**/priv/**" \
     -i "**/config/**" \
     --initial \
-    -c "bash run.sh _clear && $DOCKER_COMPOSE_CMD _test.a"
+    -c "bash run.sh _clear && $DOCKER_COMPOSE_CMD_FOR_TEST _test.a"
 }
 
 function _test.a {

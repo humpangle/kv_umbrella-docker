@@ -232,6 +232,8 @@ defmodule Kv.Cmd do
         [
           "Executing on this node: ",
           inspect(this_node),
+          " with payload: ",
+          inspect(args),
           "",
           if(
             referrer_node,

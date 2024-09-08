@@ -1,5 +1,5 @@
 defmodule KvTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   require Logger
   alias Kv.{Cmd, Reg}

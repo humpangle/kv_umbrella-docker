@@ -22,11 +22,27 @@ defmodule Kv.Application do
   end
 
   defp maybe_setup_libcluster do
-    if Application.get_env(:kv, :create_cluster) do
-      topologies = Application.get_env(:libcluster, :topologies)
+    # We don't want to set up libcluster in test - we will join nodes manually, so here we control how nodes are
+    # joined.
+    if System.get_env("AUTO_JOIN_NODES") == "true" do
+      libcluster_config = [
+        kv_gossip: [
+          strategy: Elixir.Cluster.Strategy.Gossip,
+          config: [
+            port: 45892,
+            if_addr: "0.0.0.0",
+            multicast_if: "192.168.2.1",
+            multicast_addr: "233.252.1.32",
+            multicast_ttl: 1,
+            secret: System.fetch_env!("RELEASE_COOKIE")
+          ]
+        ]
+      ]
+
+      Application.put_all_env(libcluster: libcluster_config)
 
       [
-        {Cluster.Supervisor, [topologies, [name: Kv.ClusterSupervisor]]},
+        {Cluster.Supervisor, [libcluster_config, [name: Kv.ClusterSupervisor]]},
         Kv.NodesPoller
       ]
     else

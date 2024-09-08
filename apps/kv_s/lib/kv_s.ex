@@ -6,7 +6,7 @@ defmodule KvS do
   @unknown_error "Unknown error\r\n"
 
   def start(port) do
-    {:ok, s} =
+    {:ok, listen_socket} =
       :gen_tcp.listen(
         port,
         [
@@ -19,39 +19,39 @@ defmodule KvS do
 
     Logger.info(fn ->
       [
-        "Obtained a TCP server socket ",
-        inspect(s)
+        "Obtained a TCP listen socket ",
+        inspect(listen_socket)
       ]
     end)
 
-    loop(s)
+    loop(listen_socket)
   end
 
-  defp loop(s) do
-    {:ok, cs} = :gen_tcp.accept(s)
-    {:ok, pid} = Task.Supervisor.start_child(KvS.TaskSupervisor, fn -> accept(cs) end)
-    :ok = :gen_tcp.controlling_process(cs, pid)
+  defp loop(listen_socket) do
+    {:ok, acceptor_socket} = :gen_tcp.accept(listen_socket)
+    {:ok, pid} = Task.Supervisor.start_child(KvS.TaskSupervisor, fn -> accept(acceptor_socket) end)
+    :ok = :gen_tcp.controlling_process(acceptor_socket, pid)
 
     Logger.info(fn ->
       [
-        "TCP server socket ",
-        inspect(s),
-        " received client connection socket ",
-        inspect(cs)
+        "TCP listen socket ",
+        inspect(listen_socket),
+        " receives client connection socket ",
+        inspect(acceptor_socket)
       ]
     end)
 
-    loop(s)
+    loop(listen_socket)
   end
 
-  defp accept(cs) do
-    client_message = :gen_tcp.recv(cs, 0)
+  defp accept(acceptor_socket) do
+    client_message = :gen_tcp.recv(acceptor_socket, 0)
 
     Logger.info(fn ->
       [
-        "Client socket ",
-        inspect(cs),
-        " sent message:",
+        "Acceptor socket ",
+        inspect(acceptor_socket),
+        " receives client message: ",
         inspect(client_message)
       ]
     end)
@@ -61,9 +61,9 @@ defmodule KvS do
            {:ok, cmd} <- parse(l),
            do: run(cmd)
 
-    write(cs, msg)
+    write(acceptor_socket, msg)
 
-    accept(cs)
+    accept(acceptor_socket)
   end
 
   defp write(s, {:ok, t}), do: :gen_tcp.send(s, t)
