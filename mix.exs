@@ -34,7 +34,7 @@ defmodule KvUmbrella.MixProject do
   # Run "mix help deps" for examples and options.
   defp deps do
     [
-      {:mix_test_interactive, "~> 1.2", only: [:dev, :test], runtime: false}
+      {:mix_test_interactive, "~> 3.2", only: [:dev, :test], runtime: false}
     ]
   end
 end

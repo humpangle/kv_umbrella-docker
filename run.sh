@@ -72,7 +72,17 @@ function _d {
 }
 
 function _dev_node_name {
-  printf "%s@%s" "$COMPOSE_PROJECT_NAME" "$(hostname -i)"
+  local hostname_=
+
+  if [ -e "/.dockerenv" ]; then
+    # Inside container
+    hostname_="$(hostname -i)"
+  else
+    # On container host
+    hostname_="$(exec-cmd hostname -i)"
+  fi
+
+  printf "%s@%s" "$COMPOSE_PROJECT_NAME" "$hostname_"
 }
 
 function _iex {
@@ -119,58 +129,111 @@ _clear() {
 # END HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
 
-DOCKER_COMPOSE_CMD_FOR_TEST="docker compose exec \
-    -e START_SERVER=true \
+___t_help() {
+  : "___help___ ___t_help"
+  read -r -d '' var <<'eof' || true
+Run tests. Usage:
+  rum.sh t [OPTIONS]
+
+By default, we will run non distributed tests.
+
+Options:
+  -h
+    Print this help text and quit.
+  -a
+    Run all tests including distributed tests.
+
+Examples:
+  # Get help.
+  rum.sh t --help
+  rum.sh t -h
+
+  # Exclude distributed tests from run.
+  rum.sh t
+
+  # Run all tests including distributed tests.
+  run.sh t -a
+eof
+
+  echo -e "${var}"
+}
+
+function t {
+  : "___help___ ___t_help"
+
+  _maybe_start_container "$@"
+
+  local all_=
+  local parsed_=
+
+  while getopts 'ha' parsed_; do
+    case "$parsed_" in
+    h)
+      ___t_help
+      exit
+      ;;
+
+    a)
+      all_=1
+      shift
+      ;;
+    *)
+      echo "Unknown argument: $parsed_"
+      ___t_help
+      exit 1
+      ;;
+    esac
+  done
+
+  local envs_="-e START_SERVER=true \
     -e AUTO_JOIN_NODES=false \
     -e DEBUG_LIB_CLUSTER=true \
     -e PORT=4001 \
-    d \
-    bash run.sh"
+    -e MIX_ENV=test"
 
-function t {
-  : "Run non excluded tests inside docker. Example:"
-  : "  run.sh t"
+  local mix_cmd_="'\
+    __other_args__ \
+    -S mix'"
 
-  _maybe_start_container "$@"
+  local mix_cmd_other_args_=''
 
-  eval "$DOCKER_COMPOSE_CMD_FOR_TEST _test"
+  local test_args_=''
+
+  if [ -n "$all_" ]; then
+    envs_+=" -e DEV_NODE=$(_dev_node_name)"
+
+    # Dev node already started by docker.
+    # We start a test node (temp_node_name_) here. Inside kv_test.ex (the test node), we connect to the dev node
+    # ($DEV_NODE).
+
+    local temp_node_name_=
+    temp_node_name_="${temp_node_name}_test_$(date +'%s')@$(exec-cmd hostname -i)"
+
+    mix_cmd_other_args_="\
+      --name $temp_node_name_ \
+      --cookie ${RELEASE_COOKIE}"
+
+    test_args_="--include distributed"
+  fi
+
+  mix_cmd_="${mix_cmd_//__other_args__/$mix_cmd_other_args_}"
+
+  envs_+=" -e MIX_TEST_INTERACTIVE_COMMAND_CONFIG=${mix_cmd_}"
+
+  local cmd_string_="docker compose exec \
+    $envs_ d mix test.interactive $test_args_"
+
+  eval "$cmd_string_"
 }
 
-function _test {
-    elixir \
-    -S \
-    mix test.interactive
-}
+exec-cmd() {
+  local envs_="-e START_SERVER=false \
+    -e AUTO_JOIN_NODES=false \
+    -e DEBUG_LIB_CLUSTER=false \
+    -e PORT=4001"
 
-function t.a {
-  : "Run all tests including distributed tests. Example:"
-  : "  run.sh t.a"
-
-  _maybe_start_container "$@"
-
-  chokidar \
-    "apps/**/*.ex*" \
-    -i "**/mix.exs" \
-    -i "**/priv/**" \
-    -i "**/config/**" \
-    --initial \
-    -c "bash run.sh _clear && $DOCKER_COMPOSE_CMD_FOR_TEST _test.a"
-}
-
-function _test.a {
-  local _temp_node_name
-
-  _temp_node_name="${temp_node_name}_test_$(date +'%s')@$(hostname -i)"
-
-  # Dev node already started by docker. We start a test node here. Inside
-  # kv_test.ex (the test node), we connect to the dev node.
-
-  DEV_NODE="$(_dev_node_name)" \
-    elixir \
-    --name "$_temp_node_name" \
-    --cookie "${RELEASE_COOKIE}" \
-    -S \
-    mix test --include distributed
+  local cmd_string_="docker compose exec $envs_ d $*"
+  eval "$cmd_string_"
 }
 
 function diex {
